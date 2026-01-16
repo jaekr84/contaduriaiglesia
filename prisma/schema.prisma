@@ -1,0 +1,109 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+}
+
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  profiles     Profile[]
+  transactions Transaction[]
+  categories   Category[]
+  members      Member[]
+}
+
+model Profile {
+  id             String       @id // References auth.users.id
+  email          String
+  fullName       String?
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  role           Role         @default(VIEWER)
+
+  createdAt DateTime @default(now())
+}
+
+
+enum Role {
+  ADMIN
+  TREASURER // Tesorero
+  VIEWER
+}
+
+model Category {
+  id             String          @id @default(uuid())
+  name           String
+  type           TransactionType
+  organizationId String
+  organization   Organization    @relation(fields: [organizationId], references: [id])
+  transactions   Transaction[]
+  isSystem       Boolean         @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([name, organizationId, type])
+}
+
+model Member {
+  id        String   @id @default(uuid())
+  firstName String
+  lastName  String
+  email     String?
+  phone     String?
+  address   String?
+  
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  
+  transactions Transaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([email, organizationId])
+}
+
+
+model Transaction {
+  id          String          @id @default(uuid())
+  amount      Decimal         @db.Decimal(10, 2)
+  description String?
+  date        DateTime        @default(now())
+  type        TransactionType
+  paymentMethod PaymentMethod @default(CASH)
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  memberId    String?
+  member      Member?  @relation(fields: [memberId], references: [id])
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  createdById String?
+  // createdBy   Profile?  @relation(fields: [createdById], references: [id])
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum PaymentMethod {
+  CASH
+  TRANSFER
+  DEBIT
+  CREDIT
+  QR
+  OTHER
+}
