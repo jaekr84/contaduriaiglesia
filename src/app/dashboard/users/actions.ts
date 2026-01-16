@@ -83,7 +83,9 @@ export async function inviteUser(email: string, role: Role) {
             }
         })
 
-        const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/invite/${token}`
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL ||
+            (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+        const inviteLink = `${baseUrl}/invite/${token}`
 
         // Try to send email if Resend is configured
         if (resend) {
