@@ -17,6 +17,24 @@ model Organization {
   transactions Transaction[]
   categories   Category[]
   members      Member[]
+  invitations  Invitation[]
+}
+
+model Invitation {
+  id             String       @id @default(uuid())
+  email          String
+  role           Role         @default(VIEWER)
+  token          String       @unique
+  status         String       @default("PENDING") // PENDING, ACCEPTED, REVOKED
+  expiresAt      DateTime
+  
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId, email])
 }
 
 model Profile {

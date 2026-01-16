@@ -25,3 +25,20 @@ export const requireProfile = async () => {
     }
     return profile
 }
+
+
+import { Role } from '@prisma/client'
+
+export const requireRole = async (role: Role) => {
+    const profile = await requireProfile()
+
+    if (profile.role === 'ADMIN') {
+        return profile
+    }
+
+    if (profile.role === role) {
+        return profile
+    }
+
+    throw new Error('No autorizado: Permisos insuficientes')
+}

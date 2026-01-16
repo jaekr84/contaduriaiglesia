@@ -1,8 +1,9 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { signout } from '@/app/auth/actions'
+import { getCurrentProfile } from '@/lib/auth'
 import Link from 'next/link'
-import { LayoutDashboard, Users, Banknote, Menu, LineChart } from 'lucide-react'
+import { LayoutDashboard, Users, Banknote, Menu, LineChart, ShieldCheck as UsersKey } from 'lucide-react'
 
 export default async function DashboardLayout({
     children,
@@ -16,6 +17,12 @@ export default async function DashboardLayout({
     } = await supabase.auth.getUser()
 
     if (!user) {
+        redirect('/login')
+    }
+
+    const profile = await getCurrentProfile()
+    if (!profile) {
+        // Handle case where auth user exists but no profile (shouldn't happen in normal flow)
         redirect('/login')
     }
 
@@ -55,6 +62,16 @@ export default async function DashboardLayout({
                         <LineChart className="h-4 w-4" />
                         Estado Financiero
                     </Link>
+
+                    {profile.role === 'ADMIN' && (
+                        <Link
+                            href="/dashboard/users"
+                            className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50"
+                        >
+                            <UsersKey className="h-4 w-4" />
+                            Usuarios
+                        </Link>
+                    )}
                 </nav>
                 <div className="border-t border-zinc-200 p-4 dark:border-zinc-800">
                     <div className="flex items-center gap-3">
