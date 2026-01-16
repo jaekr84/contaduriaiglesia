@@ -28,6 +28,8 @@ model Profile {
   role           Role         @default(VIEWER)
 
   createdAt DateTime @default(now())
+
+  createdTransactions Transaction[] @relation("CreatedBy")
 }
 
 
@@ -67,6 +69,7 @@ model Member {
   email     String?
   phone     String?
   address   String?
+  birthDate DateTime?
   
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id])
@@ -80,9 +83,15 @@ model Member {
 }
 
 
+enum Currency {
+  ARS
+  USD
+}
+
 model Transaction {
   id          String          @id @default(uuid())
   amount      Decimal         @db.Decimal(10, 2)
+  currency    Currency        @default(ARS)
   description String?
   date        DateTime        @default(now())
   type        TransactionType
@@ -98,7 +107,7 @@ model Transaction {
   organization   Organization @relation(fields: [organizationId], references: [id])
 
   createdById String?
-  // createdBy   Profile?  @relation(fields: [createdById], references: [id])
+  createdBy   Profile?  @relation("CreatedBy", fields: [createdById], references: [id])
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

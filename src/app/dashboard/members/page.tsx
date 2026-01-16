@@ -1,6 +1,7 @@
 import { getMembers } from './actions'
 import { Plus, Search } from 'lucide-react'
 import { CreateMemberDialog } from './components/CreateMemberDialog'
+import { EditMemberDialog } from './components/EditMemberDialog'
 
 export default async function MembersPage({
     searchParams,
@@ -66,8 +67,7 @@ export default async function MembersPage({
                                         <td className="p-4 align-middle text-zinc-600 dark:text-zinc-400">{member.email || '-'}</td>
                                         <td className="p-4 align-middle text-zinc-600 dark:text-zinc-400">{member.phone || '-'}</td>
                                         <td className="p-4 align-middle text-right">
-                                            {/* Dropdown or Edit button placeholder */}
-                                            <span className="text-zinc-400">...</span>
+                                            <EditMemberDialog member={member} />
                                         </td>
                                     </tr>
                                 ))

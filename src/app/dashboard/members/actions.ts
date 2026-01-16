@@ -37,6 +37,9 @@ export async function createMember(formData: FormData) {
     const email = (formData.get('email') as string)?.trim() || null
     const phone = (formData.get('phone') as string)?.trim() || null
     const address = (formData.get('address') as string)?.trim() || null
+    const birthDateRaw = formData.get('birthDate') as string
+    // Append Noon UTC to ensure it stays on the correct day in AR timezone
+    const birthDate = birthDateRaw ? new Date(birthDateRaw + 'T12:00:00Z') : null
 
     try {
         await prisma.member.create({
@@ -46,6 +49,7 @@ export async function createMember(formData: FormData) {
                 email,
                 phone,
                 address,
+                birthDate,
                 organizationId: profile.organizationId,
             },
         })
@@ -69,6 +73,9 @@ export async function updateMember(id: string, formData: FormData) {
     const email = (formData.get('email') as string)?.trim() || null
     const phone = (formData.get('phone') as string)?.trim() || null
     const address = (formData.get('address') as string)?.trim() || null
+    const birthDateRaw = formData.get('birthDate') as string
+    // Append Noon UTC to ensure it stays on the correct day in AR timezone
+    const birthDate = birthDateRaw ? new Date(birthDateRaw + 'T12:00:00Z') : null
 
     try {
         await prisma.member.update({
@@ -82,6 +89,7 @@ export async function updateMember(id: string, formData: FormData) {
                 email,
                 phone,
                 address,
+                birthDate,
             },
         })
         revalidatePath('/dashboard/members')

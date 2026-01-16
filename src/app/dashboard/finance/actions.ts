@@ -3,39 +3,90 @@
 import { revalidatePath } from 'next/cache'
 import prisma from '@/lib/prisma'
 import { requireProfile } from '@/lib/auth'
-import { Prisma, TransactionType, PaymentMethod } from '@prisma/client'
+import { Prisma, TransactionType, PaymentMethod, Currency } from '@prisma/client'
 
-export async function getTransactions(query?: string) {
-    const profile = await requireProfile()
+interface FinanceFilters {
+    dateFrom?: string
+    dateTo?: string
+    type?: string
+    categoryId?: string
+    memberId?: string
+    query?: string
+}
 
+async function buildWhereClause(profile: any, filters?: FinanceFilters): Promise<Prisma.TransactionWhereInput> {
     const where: Prisma.TransactionWhereInput = {
         organizationId: profile.organizationId,
-        ...(query
-            ? {
-                OR: [
-                    { description: { contains: query, mode: 'insensitive' } },
-                    { category: { name: { contains: query, mode: 'insensitive' } } },
-                    {
-                        member: {
-                            OR: [
-                                { firstName: { contains: query, mode: 'insensitive' } },
-                                { lastName: { contains: query, mode: 'insensitive' } }
-                            ]
-                        }
-                    }
-                ],
-            }
-            : {}),
     }
+
+    if (filters?.dateFrom || filters?.dateTo) {
+        where.date = {}
+        if (filters.dateFrom) where.date.gte = new Date(filters.dateFrom)
+        if (filters.dateTo) {
+            // Add time to include the full end day
+            const endDate = new Date(filters.dateTo)
+            endDate.setHours(23, 59, 59, 999)
+            where.date.lte = endDate
+        }
+    }
+
+    if (filters?.type && filters.type !== '') {
+        where.type = filters.type as TransactionType
+    }
+
+    if (filters?.categoryId && filters.categoryId !== '') {
+        // If filtering by a category, we want to include its subcategories too
+        // 1. Fetch subcategories
+        const subcategories = await prisma.category.findMany({
+            where: {
+                parentId: filters.categoryId,
+                organizationId: profile.organizationId
+            },
+            select: { id: true }
+        })
+
+        const categoryIds = [filters.categoryId, ...subcategories.map(c => c.id)]
+
+        where.categoryId = { in: categoryIds }
+    }
+
+    if (filters?.memberId && filters.memberId !== '') {
+        where.memberId = filters.memberId
+    }
+
+    if (filters?.query) {
+        where.OR = [
+            { description: { contains: filters.query, mode: 'insensitive' } },
+            { category: { name: { contains: filters.query, mode: 'insensitive' } } },
+            {
+                member: {
+                    OR: [
+                        { firstName: { contains: filters.query, mode: 'insensitive' } },
+                        { lastName: { contains: filters.query, mode: 'insensitive' } }
+                    ]
+                }
+            }
+        ]
+    }
+
+    return where
+}
+
+export async function getTransactions(filters?: FinanceFilters) {
+    const profile = await requireProfile()
+    const where = await buildWhereClause(profile, filters)
 
     const transactions = await prisma.transaction.findMany({
         where,
         include: {
-            category: true,
+            category: {
+                include: { parent: true }
+            },
             member: true,
+            createdBy: true,
         },
         orderBy: { date: 'desc' },
-        take: 50, // Limit for now
+        take: 50,
     })
 
     return transactions
@@ -82,36 +133,54 @@ export async function getCategories() {
     })
 }
 
-export async function getFinanceSummary() {
+export async function getFinanceSummary(filters?: FinanceFilters) {
     const profile = await requireProfile()
 
-    // This month's date range
-    const now = new Date()
-    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
-    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+    // If no specific date filter is provided, default to current month for the summary
+    // BUT if other filters are present (e.g. category), we might want to respect that without date?
+    // User expectation: "If I select 'Tithing', show me total tithing ever?" or "Total tithing this month?"
+    // Usually dashboards default to "This Month" unless specified.
+
+    let where = await buildWhereClause(profile, filters)
+
+    // Apply default month filter ONLY if no date range is specified in filters
+    if (!filters?.dateFrom && !filters?.dateTo) {
+        const now = new Date()
+        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
+        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+
+        where.date = {
+            gte: firstDay,
+            lte: lastDay,
+        }
+    }
 
     const transactions = await prisma.transaction.findMany({
-        where: {
-            organizationId: profile.organizationId,
-            date: {
-                gte: firstDay,
-                lte: lastDay,
-            }
-        }
+        where
     })
 
-    let income = 0;
-    let expense = 0;
+    const totals = {
+        ARS: { income: 0, expense: 0 },
+        USD: { income: 0, expense: 0 }
+    }
 
     transactions.forEach(t => {
-        if (t.type === 'INCOME') income += Number(t.amount)
-        if (t.type === 'EXPENSE') expense += Number(t.amount)
+        const curr = t.currency || 'ARS' // Default to ARS for old data if any
+        if (t.type === 'INCOME') totals[curr].income += Number(t.amount)
+        if (t.type === 'EXPENSE') totals[curr].expense += Number(t.amount)
     })
 
     return {
-        income,
-        expense,
-        balance: income - expense
+        ARS: {
+            income: totals.ARS.income,
+            expense: totals.ARS.expense,
+            balance: totals.ARS.income - totals.ARS.expense
+        },
+        USD: {
+            income: totals.USD.income,
+            expense: totals.USD.expense,
+            balance: totals.USD.income - totals.USD.expense
+        }
     }
 }
 
@@ -120,11 +189,15 @@ export async function createTransaction(formData: FormData) {
 
     const amount = parseFloat(formData.get('amount') as string)
     const description = (formData.get('description') as string)?.trim() || null
-    const date = new Date(formData.get('date') as string)
+    // Treat the incoming datetime-local string as Argentina Time (-03:00)
+    // Input format: "YYYY-MM-DDTHH:mm" -> Append "-03:00" for correct absolute time.
+    const dateStr = formData.get('date') as string
+    const date = new Date(dateStr + '-03:00')
     const type = formData.get('type') as TransactionType
     const categoryId = formData.get('categoryId') as string
     const memberId = (formData.get('memberId') as string) || null
     const paymentMethod = formData.get('paymentMethod') as PaymentMethod
+    const currency = (formData.get('currency') as Currency) || 'ARS'
 
     if (isNaN(amount) || amount <= 0) {
         return { error: 'El monto debe ser mayor a 0' }
@@ -142,6 +215,7 @@ export async function createTransaction(formData: FormData) {
                 memberId: memberId === 'none' ? null : memberId,
                 createdById: profile.id,
                 organizationId: profile.organizationId,
+                currency,
             },
         })
         revalidatePath('/dashboard/finance')
@@ -164,7 +238,7 @@ export async function createCategory(formData: FormData) {
     if (names.length === 0) return { error: 'Nombre inválido' }
 
     try {
-        await prisma.$transaction(
+        const newCategories = await prisma.$transaction(
             names.map(name => prisma.category.create({
                 data: {
                     name,
@@ -176,7 +250,7 @@ export async function createCategory(formData: FormData) {
         )
         revalidatePath('/dashboard/finance')
         revalidatePath('/dashboard/finance/categories')
-        return { success: true }
+        return { success: true, category: newCategories[0] }
     } catch (e) {
         console.error(e)
         return { error: 'Error al crear categoría(s)' }
@@ -256,5 +330,109 @@ export async function updateCategory(id: string, formData: FormData) {
         return { success: true }
     } catch (e) {
         return { error: 'Error al actualizar' }
+    }
+}
+
+export async function createExchange(formData: FormData) {
+    const profile = await requireProfile()
+
+    const amountOut = parseFloat(formData.get('amountOut') as string)
+    const currencyOut = formData.get('currencyOut') as Currency
+    const amountIn = parseFloat(formData.get('amountIn') as string)
+    const currencyIn = formData.get('currencyIn') as Currency
+    const dateStr = formData.get('date') as string
+    const date = new Date(dateStr + '-03:00')
+
+    if (isNaN(amountOut) || amountOut <= 0 || isNaN(amountIn) || amountIn <= 0) {
+        return { error: 'Los montos deben ser mayores a 0' }
+    }
+    if (currencyOut === currencyIn) {
+        return { error: 'Las monedas deben ser diferentes' }
+    }
+
+    // Validate bounds: Cannot exchange more than available balance
+    const incomeSum = await prisma.transaction.aggregate({
+        where: {
+            organizationId: profile.organizationId,
+            currency: currencyOut,
+            type: 'INCOME'
+        },
+        _sum: { amount: true }
+    })
+    const expenseSum = await prisma.transaction.aggregate({
+        where: {
+            organizationId: profile.organizationId,
+            currency: currencyOut,
+            type: 'EXPENSE'
+        },
+        _sum: { amount: true }
+    })
+
+    const totalIncome = Number(incomeSum._sum.amount || 0)
+    const totalExpense = Number(expenseSum._sum.amount || 0)
+    const currentBalance = totalIncome - totalExpense
+
+    if (amountOut > currentBalance) {
+        return { error: `Fondos insuficientes en ${currencyOut}. Disponible: ${currentBalance.toLocaleString('es-AR')}` }
+    }
+
+    try {
+        await prisma.$transaction(async (tx) => {
+            const catName = 'Intercambio de Moneda'
+
+            let expenseCat = await tx.category.findFirst({
+                where: { name: catName, type: 'EXPENSE', organizationId: profile.organizationId }
+            })
+            if (!expenseCat) {
+                expenseCat = await tx.category.create({
+                    data: { name: catName, type: 'EXPENSE', organizationId: profile.organizationId }
+                })
+            }
+
+            let incomeCat = await tx.category.findFirst({
+                where: { name: catName, type: 'INCOME', organizationId: profile.organizationId }
+            })
+            if (!incomeCat) {
+                incomeCat = await tx.category.create({
+                    data: { name: catName, type: 'INCOME', organizationId: profile.organizationId }
+                })
+            }
+
+            const description = `Cambio: ${amountOut} ${currencyOut} -> ${amountIn} ${currencyIn}`
+
+            await tx.transaction.create({
+                data: {
+                    amount: amountOut,
+                    currency: currencyOut,
+                    type: 'EXPENSE',
+                    categoryId: expenseCat.id,
+                    date: date,
+                    description: description,
+                    paymentMethod: 'CASH',
+                    organizationId: profile.organizationId,
+                    createdById: profile.id,
+                }
+            })
+
+            await tx.transaction.create({
+                data: {
+                    amount: amountIn,
+                    currency: currencyIn,
+                    type: 'INCOME',
+                    categoryId: incomeCat.id,
+                    date: date,
+                    description: description,
+                    paymentMethod: 'CASH',
+                    organizationId: profile.organizationId,
+                    createdById: profile.id,
+                }
+            })
+        })
+
+        revalidatePath('/dashboard/finance')
+        return { success: true }
+    } catch (error) {
+        console.error(error)
+        return { error: 'Error al registrar el cambio' }
     }
 }
