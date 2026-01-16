@@ -1,7 +1,7 @@
 'use server'
 
 import prisma from '@/lib/prisma'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient, createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
@@ -32,24 +32,24 @@ export async function acceptInvitation(token: string, formData: FormData) {
         return { error: 'Todos los campos son obligatorios' }
     }
 
-    const supabase = await createClient()
+    // Use admin client to create user with email confirmation
+    const supabaseAdmin = await createAdminClient()
 
-    // 1. Create Supabase Auth User
-    const { data, error } = await supabase.auth.signUp({
+    // 1. Create Supabase Auth User (Verified)
+    const { data: userData, error: createError } = await supabaseAdmin.auth.admin.createUser({
         email: invitation.email,
         password,
-        options: {
-            data: {
-                full_name: fullName,
-            }
+        email_confirm: true,
+        user_metadata: {
+            full_name: fullName
         }
     })
 
-    if (error) {
-        return { error: error.message }
+    if (createError) {
+        return { error: createError.message }
     }
 
-    if (!data.user) {
+    if (!userData.user) {
         return { error: 'Error al crear el usuario' }
     }
 
@@ -59,7 +59,7 @@ export async function acceptInvitation(token: string, formData: FormData) {
             // Create Profile
             await tx.profile.create({
                 data: {
-                    id: data.user!.id,
+                    id: userData.user!.id,
                     email: invitation.email,
                     fullName,
                     role: invitation.role,
@@ -73,6 +73,19 @@ export async function acceptInvitation(token: string, formData: FormData) {
                 data: { status: 'ACCEPTED' }
             })
         })
+
+        // 3. Sign in the user immediately
+        const supabase = await createClient()
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+            email: invitation.email,
+            password
+        })
+
+        if (signInError) {
+            console.error('Error signing in after creation:', signInError)
+            return { error: 'Usuario creado pero error al iniciar sesión. Intente loguearse manualmente.' }
+        }
+
     } catch (dbError) {
         console.error(dbError)
         // Cleanup: Ideally we should delete the auth user here if DB fails, 

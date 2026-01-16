@@ -2,9 +2,14 @@
 
 import { requireProfile } from '@/lib/auth'
 import prisma from '@/lib/prisma'
+import { createAdminClient } from '@/lib/supabase/server'
 import { Role } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 import { randomBytes } from 'crypto'
+import { Resend } from 'resend'
+
+// Initialize Resend with API Key from environment variables
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
 export async function getUsers() {
     const profile = await requireProfile()
@@ -27,7 +32,7 @@ export async function getUsers() {
         orderBy: { createdAt: 'desc' }
     })
 
-    return { profiles, invitations }
+    return { profiles, invitations, currentUserId: profile.id }
 }
 
 export async function inviteUser(email: string, role: Role) {
@@ -67,7 +72,7 @@ export async function inviteUser(email: string, role: Role) {
         const expiresAt = new Date()
         expiresAt.setDate(expiresAt.getDate() + 7) // 7 days expiration
 
-        const invitation = await prisma.invitation.create({
+        await prisma.invitation.create({
             data: {
                 email,
                 role,
@@ -78,10 +83,37 @@ export async function inviteUser(email: string, role: Role) {
             }
         })
 
+        const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/invite/${token}`
+
+        // Try to send email if Resend is configured
+        if (resend) {
+            try {
+                const { error } = await resend.emails.send({
+                    from: process.env.EMAIL_FROM || 'Iglesia App <onboarding@resend.dev>',
+                    to: email,
+                    subject: 'Invitación a Iglesia App',
+                    html: `
+                        <p>Has sido invitado a unirte a la organización en Iglesia App.</p>
+                        <p>Tu rol asignado es: <strong>${role}</strong></p>
+                        <p>Hacé click en el siguiente enlace para aceptar la invitación:</p>
+                        <a href="${inviteLink}">${inviteLink}</a>
+                    `
+                })
+
+                if (error) {
+                    console.error('Resend error:', error)
+                    // We don't return error here to allow fallback to manual link copying
+                }
+            } catch (emailError) {
+                console.error('Email sending failed:', emailError)
+                // Continue execution to return the link
+            }
+        }
+
         revalidatePath('/dashboard/users')
         return {
             success: true,
-            invitationLink: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/invite/${token}`
+            invitationLink: inviteLink
         }
     } catch (e) {
         console.error(e)
@@ -106,5 +138,46 @@ export async function revokeInvitation(id: string) {
         return { success: true }
     } catch (e) {
         return { error: 'Error al revocar invitación' }
+    }
+}
+
+export async function deleteUser(userId: string) {
+    const profile = await requireProfile()
+
+    if (profile.role !== 'ADMIN') {
+        return { error: 'No autorizado' }
+    }
+
+    if (profile.id === userId) {
+        return { error: 'No puedes eliminar tu propia cuenta' }
+    }
+
+    try {
+        // 1. Delete from Supabase Auth (requires Admin Client)
+        const supabaseAdmin = await createAdminClient()
+        const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId)
+
+        if (authError) {
+            // If user is not found in Auth, we should still proceed to delete from DB
+            if (authError.message.includes('User not found') || authError.code === 'user_not_found') {
+                console.warn('User not found in Supabase Auth, preceding to delete from DB:', userId)
+            } else {
+                console.error('Error deleting auth user:', authError)
+                return { error: 'Error al eliminar usuario de autenticación' }
+            }
+        }
+
+
+        // 2. Delete Profile and related data will be handled by cascade or manual deletion if needed
+        // Assuming cascade delete is not set up perfectly, we explicitly delete profile
+        await prisma.profile.delete({
+            where: { id: userId, organizationId: profile.organizationId }
+        })
+
+        revalidatePath('/dashboard/users')
+        return { success: true }
+    } catch (e) {
+        console.error('Error deleting user:', e)
+        return { error: 'Error al eliminar usuario' }
     }
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { inviteUser, revokeInvitation } from '../actions'
+import { inviteUser, revokeInvitation, deleteUser } from '../actions'
 import { Plus, Copy, Check, Loader2, Trash2, Shield, User } from 'lucide-react'
 import { toast } from 'sonner'
 import { Role } from '@prisma/client'
@@ -9,9 +9,10 @@ import { Role } from '@prisma/client'
 interface Props {
     profiles: any[]
     invitations: any[]
+    currentUserId: string
 }
 
-export function UsersList({ profiles, invitations }: Props) {
+export function UsersList({ profiles, invitations, currentUserId }: Props) {
     const [isPending, startTransition] = useTransition()
     const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
     const [copiedToken, setCopiedToken] = useState<string | null>(null)
@@ -34,6 +35,16 @@ export function UsersList({ profiles, invitations }: Props) {
         })
     }
 
+    const handleDeleteUser = (userId: string) => {
+        if (!confirm('¿Estás seguro de que querés eliminar este usuario? Esta acción no se puede deshacer.')) return
+
+        startTransition(async () => {
+            const result = await deleteUser(userId)
+            if (result.error) toast.error(result.error)
+            else toast.success('Usuario eliminado correctamente')
+        })
+    }
+
     const handleInvite = async (e: React.FormEvent<HTMLFormElement>) => {
         try {
             e.preventDefault()
@@ -47,7 +58,7 @@ export function UsersList({ profiles, invitations }: Props) {
                     toast.error(result.error)
                 } else if (result.success && result.invitationLink) {
                     setGeneratedLink(result.invitationLink)
-                    toast.success('Invitación creada correctamente')
+                    toast.success('Invitación enviada por email')
                     // Don't close modal yet, let them copy the link
                 }
             })
@@ -111,8 +122,12 @@ export function UsersList({ profiles, invitations }: Props) {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        {/* Don't allow deleting yourself or if there's only 1 admin logic needed later */}
-                                        <button className="text-zinc-400 hover:text-red-500 disabled:opacity-50" disabled>
+                                        <button
+                                            onClick={() => handleDeleteUser(profile.id)}
+                                            className="text-zinc-400 hover:text-red-500 disabled:opacity-30 disabled:hover:text-zinc-400"
+                                            disabled={profile.id === currentUserId || isPending}
+                                            title={profile.id === currentUserId ? 'No puedes eliminar tu cuenta' : 'Eliminar usuario'}
+                                        >
                                             <Trash2 className="h-4 w-4" />
                                         </button>
                                     </td>
@@ -249,7 +264,7 @@ export function UsersList({ profiles, invitations }: Props) {
                         ) : (
                             <div className="space-y-4">
                                 <div className="rounded-md bg-green-50 p-4 text-sm text-green-700 dark:bg-green-900/20 dark:text-green-400">
-                                    ¡Invitación creada! Compartí el siguiente link con el usuario:
+                                    ¡Invitación creada! Se envió un email al usuario. También podés copiar el link:
                                 </div>
                                 <div className="flex items-center gap-2 rounded-md border border-zinc-200 bg-zinc-50 p-2 dark:border-zinc-800 dark:bg-zinc-900">
                                     <code className="flex-1 overflow-x-auto text-xs">{generatedLink}</code>
