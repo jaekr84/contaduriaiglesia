@@ -391,7 +391,18 @@ export async function createExchange(formData: FormData) {
                 })
             }
 
-            const description = `Cambio: ${amountOut} ${currencyOut} -> ${amountIn} ${currencyIn}`
+            // Calculate exchange rate for description
+            let description = ''
+            if (currencyOut === 'USD' && currencyIn === 'ARS') {
+                const rate = amountIn / amountOut
+                description = `TC: 1 USD = ${rate.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ARS`
+            } else if (currencyOut === 'ARS' && currencyIn === 'USD') {
+                const rate = amountOut / amountIn
+                description = `TC: 1 USD = ${rate.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ARS`
+            } else {
+                const rate = amountIn / amountOut
+                description = `TC: 1 ${currencyOut} = ${rate.toFixed(4)} ${currencyIn}`
+            }
 
             await tx.transaction.create({
                 data: {

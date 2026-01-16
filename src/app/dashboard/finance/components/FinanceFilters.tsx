@@ -65,25 +65,38 @@ export function FinanceFilters({ categories, members }: Props) {
                 )}
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                {/* Date From */}
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {/* Month/Year Selector */}
                 <div className="space-y-1">
-                    <label className="text-xs font-medium text-zinc-500">Desde</label>
+                    <label className="text-xs font-medium text-zinc-500">Mes</label>
                     <input
-                        type="date"
-                        value={dateFrom}
-                        onChange={(e) => updateFilter('dateFrom', e.target.value)}
-                        className="w-full rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950 dark:focus-visible:ring-zinc-300"
-                    />
-                </div>
+                        type="month"
+                        value={(() => {
+                            // If we have dateFrom, extract year-month from it
+                            if (dateFrom) {
+                                return dateFrom.slice(0, 7) // "YYYY-MM-DD" -> "YYYY-MM"
+                            }
+                            // Default to current month
+                            const now = new Date()
+                            return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+                        })()}
+                        onChange={(e) => {
+                            const yearMonth = e.target.value // "YYYY-MM"
+                            if (yearMonth) {
+                                const [year, month] = yearMonth.split('-')
+                                const firstDay = `${year}-${month}-01`
+                                const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate()
+                                const lastDayStr = `${year}-${month}-${String(lastDay).padStart(2, '0')}`
 
-                {/* Date To */}
-                <div className="space-y-1">
-                    <label className="text-xs font-medium text-zinc-500">Hasta</label>
-                    <input
-                        type="date"
-                        value={dateTo}
-                        onChange={(e) => updateFilter('dateTo', e.target.value)}
+                                // Update both dateFrom and dateTo
+                                const params = new URLSearchParams(searchParams)
+                                params.set('dateFrom', firstDay)
+                                params.set('dateTo', lastDayStr)
+                                startTransition(() => {
+                                    router.replace(`${pathname}?${params.toString()}`)
+                                })
+                            }
+                        }}
                         className="w-full rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950 dark:focus-visible:ring-zinc-300"
                     />
                 </div>

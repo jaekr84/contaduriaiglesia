@@ -1,5 +1,5 @@
 import { getMembers } from './actions'
-import { Plus, Search } from 'lucide-react'
+import { Plus, Search, Users } from 'lucide-react'
 import { CreateMemberDialog } from './components/CreateMemberDialog'
 import { EditMemberDialog } from './components/EditMemberDialog'
 
@@ -22,6 +22,15 @@ export default async function MembersPage({
                     </p>
                 </div>
                 <CreateMemberDialog />
+            </div>
+
+            {/* Member Count KPI */}
+            <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+                <div className="flex items-center gap-2 text-purple-600 dark:text-purple-500 mb-2">
+                    <Users className="h-5 w-5" />
+                    <span className="text-sm font-medium">Total de Miembros</span>
+                </div>
+                <div className="text-3xl font-bold text-zinc-900 dark:text-zinc-50">{members.length}</div>
             </div>
 
             {/* Search Bar - Todo: Make this a client component for debounce */}

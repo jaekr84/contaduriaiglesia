@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { signout } from '@/app/auth/actions'
 import Link from 'next/link'
-import { LayoutDashboard, Users, Banknote, Menu } from 'lucide-react'
+import { LayoutDashboard, Users, Banknote, Menu, LineChart } from 'lucide-react'
 
 export default async function DashboardLayout({
     children,
@@ -47,6 +47,13 @@ export default async function DashboardLayout({
                     >
                         <Banknote className="h-4 w-4" />
                         Finanzas
+                    </Link>
+                    <Link
+                        href="/dashboard/balance"
+                        className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50"
+                    >
+                        <LineChart className="h-4 w-4" />
+                        Estado Financiero
                     </Link>
                 </nav>
                 <div className="border-t border-zinc-200 p-4 dark:border-zinc-800">
