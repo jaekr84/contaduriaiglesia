@@ -46,10 +46,18 @@ model Category {
   transactions   Transaction[]
   isSystem       Boolean         @default(false)
 
+  parentId       String?
+  parent         Category?       @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  subcategories  Category[]      @relation("CategoryHierarchy")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([name, organizationId, type])
+  // Unique name only within the same parent level? Or generally?
+  // Let's keep it simple: Name unique per type/org is too restrictive for subcategories (e.g. 'General' in multiple places).
+  // So we remove the global unique constraint or add parentId. 
+  // Postgres treats NULLs as distinct for unique indexes usually, but let's just make it loose for now.
+  @@index([organizationId, type])
 }
 
 model Member {
