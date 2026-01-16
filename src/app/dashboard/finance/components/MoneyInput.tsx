@@ -39,17 +39,54 @@ export function MoneyInput({ value, onChange, name, placeholder, required, class
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const raw = e.target.value
+        const cursorPosition = e.target.selectionStart || 0
+
         // Allow Digits, Dot, Comma
         if (/^[0-9.,]*$/.test(raw)) {
-            setDisplayValue(raw)
-            if (onChange) {
-                // Normalize to standard "1234.56" format for backend
-                // Replace comma with dot for JS Number parsing? 
-                // Or user might use different locale.
-                // Standardize: remove dots (thousands), replace comma with dot (decimal).
-                // "1.234,56" -> "1234.56"
-                const normalized = raw.replace(/\./g, '').replace(',', '.')
-                onChange(normalized)
+            // Normalize: remove dots (thousands), replace comma with dot (decimal)
+            const normalized = raw.replace(/\./g, '').replace(',', '.')
+            const num = parseFloat(normalized)
+
+            if (!isNaN(num) && normalized) {
+                // Format in real-time with thousands separators
+                // Split into integer and decimal parts
+                const parts = normalized.split('.')
+                const integerPart = parts[0]
+                const decimalPart = parts[1]
+
+                // Format integer part with dots
+                const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+
+                // Reconstruct with comma for decimal
+                const formatted = decimalPart !== undefined
+                    ? `${formattedInteger},${decimalPart}`
+                    : formattedInteger
+
+                setDisplayValue(formatted)
+
+                // Adjust cursor position based on added/removed separators
+                const oldDots = (raw.slice(0, cursorPosition).match(/\./g) || []).length
+                const newDots = (formatted.slice(0, cursorPosition).match(/\./g) || []).length
+                const newCursorPosition = cursorPosition + (newDots - oldDots)
+
+                // Set cursor position after state update
+                setTimeout(() => {
+                    if (e.target) {
+                        e.target.setSelectionRange(newCursorPosition, newCursorPosition)
+                    }
+                }, 0)
+
+                if (onChange) {
+                    onChange(normalized)
+                }
+            } else if (raw === '' || raw === '0') {
+                setDisplayValue(raw)
+                if (onChange) {
+                    onChange(raw.replace(',', '.'))
+                }
+            } else {
+                // Invalid number, just set the raw value
+                setDisplayValue(raw)
             }
         }
     }

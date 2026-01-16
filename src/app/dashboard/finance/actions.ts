@@ -74,7 +74,19 @@ async function buildWhereClause(profile: any, filters?: FinanceFilters): Promise
 
 export async function getTransactions(filters?: FinanceFilters) {
     const profile = await requireProfile()
-    const where = await buildWhereClause(profile, filters)
+    let where = await buildWhereClause(profile, filters)
+
+    // Apply default month filter ONLY if no date range is specified in filters
+    if (!filters?.dateFrom && !filters?.dateTo) {
+        const now = new Date()
+        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
+        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
+
+        where.date = {
+            gte: firstDay,
+            lte: lastDay,
+        }
+    }
 
     const transactions = await prisma.transaction.findMany({
         where,
@@ -86,7 +98,7 @@ export async function getTransactions(filters?: FinanceFilters) {
             createdBy: true,
         },
         orderBy: { date: 'desc' },
-        take: 50,
+        take: 200, // Increased from 50 to 200 for better coverage within a month
     })
 
     return transactions
@@ -94,36 +106,6 @@ export async function getTransactions(filters?: FinanceFilters) {
 
 export async function getCategories() {
     const profile = await requireProfile()
-
-    const count = await prisma.category.count({
-        where: { organizationId: profile.organizationId }
-    })
-
-    if (count === 0) {
-        // Seed default categories
-        const defaults = [
-            { name: 'Diezmos', type: 'INCOME' },
-            { name: 'Ofrendas', type: 'INCOME' },
-            { name: 'Donaciones', type: 'INCOME' },
-            { name: 'Eventos', type: 'INCOME' },
-            { name: 'Alquiler', type: 'EXPENSE' },
-            { name: 'Servicios (Luz/Agua/Gas)', type: 'EXPENSE' },
-            { name: 'Mantenimiento', type: 'EXPENSE' },
-            { name: 'Ayuda Social', type: 'EXPENSE' },
-            { name: 'Sueldos/Honorarios', type: 'EXPENSE' },
-            { name: 'Otros', type: 'EXPENSE' },
-        ]
-
-        await prisma.$transaction(
-            defaults.map(cat => prisma.category.create({
-                data: {
-                    name: cat.name,
-                    type: cat.type as TransactionType,
-                    organizationId: profile.organizationId
-                }
-            }))
-        )
-    }
 
     // Fetch all categories including subcategories
     return await prisma.category.findMany({
@@ -189,10 +171,21 @@ export async function createTransaction(formData: FormData) {
 
     const amount = parseFloat(formData.get('amount') as string)
     const description = (formData.get('description') as string)?.trim() || null
-    // Treat the incoming datetime-local string as Argentina Time (-03:00)
-    // Input format: "YYYY-MM-DDTHH:mm" -> Append "-03:00" for correct absolute time.
+    // Handle both date formats: "YYYY-MM-DD" (date input) or "YYYY-MM-DDTHH:mm" (datetime-local input)
     const dateStr = formData.get('date') as string
-    const date = new Date(dateStr + '-03:00')
+    let date: Date
+    if (dateStr.includes('T')) {
+        // Has time component
+        date = new Date(dateStr + '-03:00')
+    } else {
+        // Only date, use current time in Argentina timezone
+        const now = new Date()
+        const argTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Argentina/Buenos_Aires' }))
+        const hours = argTime.getHours().toString().padStart(2, '0')
+        const minutes = argTime.getMinutes().toString().padStart(2, '0')
+        const seconds = argTime.getSeconds().toString().padStart(2, '0')
+        date = new Date(`${dateStr}T${hours}:${minutes}:${seconds}-03:00`)
+    }
     const type = formData.get('type') as TransactionType
     const categoryId = formData.get('categoryId') as string
     const memberId = (formData.get('memberId') as string) || null

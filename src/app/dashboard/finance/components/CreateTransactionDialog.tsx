@@ -6,6 +6,7 @@ import { createTransaction, createCategory } from '../actions'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { Category, Member } from '@prisma/client'
+import { MoneyInput } from './MoneyInput'
 
 interface Props {
     categories: Category[]
@@ -157,13 +158,10 @@ export function CreateTransactionDialog({ categories, members }: Props) {
                                 <label className="text-sm font-medium text-zinc-900 dark:text-zinc-50">Monto</label>
                                 <div className="relative">
                                     <span className="absolute left-3 top-2 text-zinc-500">{currency === 'ARS' ? '$' : 'US$'}</span>
-                                    <input
+                                    <MoneyInput
                                         name="amount"
-                                        type="number"
-                                        step="0.01"
-                                        min="0.01"
                                         required
-                                        placeholder="0.00"
+                                        placeholder="0,00"
                                         className="flex h-9 w-full rounded-md border border-zinc-200 bg-white pl-12 pr-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950 dark:placeholder:text-zinc-400 dark:focus-visible:ring-zinc-300"
                                     />
                                 </div>
@@ -264,12 +262,12 @@ export function CreateTransactionDialog({ categories, members }: Props) {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-zinc-900 dark:text-zinc-50">Fecha y Hora</label>
+                                <label className="text-sm font-medium text-zinc-900 dark:text-zinc-50">Fecha</label>
                                 <input
                                     name="date"
-                                    type="datetime-local"
+                                    type="date"
                                     required
-                                    defaultValue={new Date().toLocaleString('sv-SE', { timeZone: 'America/Argentina/Buenos_Aires' }).replace(' ', 'T').slice(0, 16)}
+                                    defaultValue={new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Argentina/Buenos_Aires' })}
                                     className="flex h-9 w-full rounded-md border border-zinc-200 bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950 dark:focus-visible:ring-zinc-300"
                                 />
                             </div>

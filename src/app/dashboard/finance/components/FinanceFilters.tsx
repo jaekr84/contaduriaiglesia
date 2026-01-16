@@ -2,7 +2,8 @@
 
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { Category, Member } from '@prisma/client'
-import { RotateCcw, Filter } from 'lucide-react'
+import { RotateCcw, Filter, Loader2 } from 'lucide-react'
+import { useTransition } from 'react'
 
 interface Props {
     categories: Category[]
@@ -13,6 +14,7 @@ export function FinanceFilters({ categories, members }: Props) {
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
+    const [isPending, startTransition] = useTransition()
 
     // Get current values
     const dateFrom = searchParams.get('dateFrom') || ''
@@ -29,17 +31,26 @@ export function FinanceFilters({ categories, members }: Props) {
         } else {
             params.delete(key)
         }
-        router.replace(`${pathname}?${params.toString()}`)
+        startTransition(() => {
+            router.replace(`${pathname}?${params.toString()}`)
+        })
     }
 
     function clearFilters() {
-        router.replace(pathname)
+        startTransition(() => {
+            router.replace(pathname)
+        })
     }
 
     const hasActiveFilters = dateFrom || dateTo || type || categoryId || memberId
 
     return (
-        <div className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+        <div className="relative rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+            {isPending && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-white/80 dark:bg-zinc-950/80">
+                    <Loader2 className="h-6 w-6 animate-spin text-zinc-900 dark:text-zinc-50" />
+                </div>
+            )}
             <div className="flex items-center gap-2 mb-4 text-sm font-medium text-zinc-900 dark:text-zinc-50">
                 <Filter className="h-4 w-4" />
                 Filtros
