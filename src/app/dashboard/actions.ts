@@ -12,7 +12,6 @@ export async function getDashboardData(year?: number, month?: number) {
     const targetYear = year ?? now.getFullYear()
     const targetMonth = month ?? now.getMonth() + 1
 
-    console.time('getDashboardData')
     const start = performance.now()
 
     const firstDay = new Date(targetYear, targetMonth - 1, 1)
@@ -161,7 +160,6 @@ export async function getDashboardData(year?: number, month?: number) {
         return Object.values(result).sort((a, b) => b.total - a.total)
     }
 
-    console.timeEnd('getDashboardData')
     console.log(`getDashboardData took ${performance.now() - start}ms`)
 
     return {
