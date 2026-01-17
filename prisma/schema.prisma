@@ -49,7 +49,8 @@ model Profile {
 
   createdAt DateTime @default(now())
 
-  createdTransactions Transaction[] @relation("CreatedBy")
+  createdTransactions   Transaction[] @relation("CreatedBy")
+  cancelledTransactions Transaction[] @relation("CancelledBy")
 }
 
 
@@ -129,12 +130,19 @@ model Transaction {
   createdById String?
   createdBy   Profile?  @relation("CreatedBy", fields: [createdById], references: [id])
   
+  // Cancellation fields
+  cancelledAt     DateTime?
+  cancelledById   String?
+  cancelledBy     Profile?  @relation("CancelledBy", fields: [cancelledById], references: [id])
+  cancellationReason String?
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([organizationId, date])
   @@index([organizationId, type])
   @@index([categoryId])
+  @@index([cancelledAt])
 }
 
 enum TransactionType {

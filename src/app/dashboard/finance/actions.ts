@@ -89,6 +89,9 @@ export async function getTransactions(filters?: FinanceFilters) {
         }
     }
 
+    // Include cancelled transactions (they will be styled differently in the UI)
+    // where.cancelledAt = null
+
     const transactions = await prisma.transaction.findMany({
         where,
         include: {
@@ -97,6 +100,7 @@ export async function getTransactions(filters?: FinanceFilters) {
             },
             member: true,
             createdBy: true,
+            cancelledBy: true,
         },
         orderBy: { date: 'desc' },
         take: 200, // Increased from 50 to 200 for better coverage within a month
@@ -104,6 +108,9 @@ export async function getTransactions(filters?: FinanceFilters) {
 
     return transactions
 }
+
+// Export the inferred type for use in components
+export type TransactionWithRelations = Prisma.PromiseReturnType<typeof getTransactions>[number]
 
 export async function getCategories() {
     const profile = await requireProfile()
@@ -137,6 +144,9 @@ export async function getFinanceSummary(filters?: FinanceFilters) {
             lte: lastDay,
         }
     }
+
+    // Exclude cancelled transactions
+    where.cancelledAt = null
 
     const groups = await prisma.transaction.groupBy({
         by: ['currency', 'type'],
@@ -493,5 +503,128 @@ export async function createExchange(formData: FormData) {
     } catch (error) {
         console.error(error)
         return { error: 'Error al registrar el cambio' }
+    }
+}
+
+export async function cancelTransaction(transactionId: string, reason: string) {
+    const profile = await requireProfile()
+
+    // Verify user has permission (ADMIN or TREASURER)
+    if (profile.role !== 'ADMIN' && profile.role !== 'TREASURER') {
+        return { error: 'No tienes permisos para anular transacciones' }
+    }
+
+    if (!reason || reason.trim().length === 0) {
+        return { error: 'Debes proporcionar una razón para la anulación' }
+    }
+
+    try {
+        // Fetch the transaction with all details for audit log
+        const transaction = await prisma.transaction.findUnique({
+            where: { id: transactionId },
+            include: {
+                category: { include: { parent: true } },
+                member: true,
+                createdBy: true
+            }
+        })
+
+        if (!transaction) {
+            return { error: 'Transacción no encontrada' }
+        }
+
+        if (transaction.organizationId !== profile.organizationId) {
+            return { error: 'No tienes permisos para anular esta transacción' }
+        }
+
+        if (transaction.cancelledAt) {
+            return { error: 'Esta transacción ya está anulada' }
+        }
+
+        // Check if this is part of a currency exchange (has matching description with TC:)
+        const isExchange = transaction.description?.startsWith('TC:')
+        let relatedTransaction = null
+
+        if (isExchange) {
+            // Find the related transaction (same description, same date, opposite type)
+            const oppositeType = transaction.type === 'INCOME' ? 'EXPENSE' : 'INCOME'
+            relatedTransaction = await prisma.transaction.findFirst({
+                where: {
+                    organizationId: profile.organizationId,
+                    description: transaction.description,
+                    date: transaction.date,
+                    type: oppositeType,
+                    cancelledAt: null,
+                    id: { not: transactionId }
+                }
+            })
+        }
+
+        // Cancel the transaction(s)
+        const now = new Date()
+
+        await prisma.$transaction(async (tx) => {
+            // Cancel main transaction
+            await tx.transaction.update({
+                where: { id: transactionId },
+                data: {
+                    cancelledAt: now,
+                    cancelledById: profile.id,
+                    cancellationReason: reason.trim()
+                }
+            })
+
+            // Cancel related transaction if it's an exchange
+            if (relatedTransaction) {
+                await tx.transaction.update({
+                    where: { id: relatedTransaction.id },
+                    data: {
+                        cancelledAt: now,
+                        cancelledById: profile.id,
+                        cancellationReason: reason.trim()
+                    }
+                })
+            }
+        })
+
+        // Create audit log
+        // Ensure category name is properly resolved
+        let categoryName = 'Categoría desconocida'
+        if (transaction.category) {
+            categoryName = transaction.category.parent
+                ? `${transaction.category.parent.name} > ${transaction.category.name}`
+                : transaction.category.name
+        }
+
+        await createAuditLog({
+            eventType: 'TRANSACTION_DELETED',
+            userId: profile.id,
+            userEmail: profile.email,
+            organizationId: profile.organizationId,
+            resourceType: isExchange ? 'Exchange' : 'Transaction',
+            resourceId: transactionId,
+            details: {
+                type: transaction.type,
+                amount: transaction.amount.toString(),
+                currency: transaction.currency,
+                categoryName,
+                description: transaction.description || undefined,
+                date: transaction.date.toISOString(),
+                createdBy: transaction.createdBy?.email || 'Unknown',
+                cancelledBy: profile.email,
+                cancellationReason: reason.trim(),
+                isExchange,
+                relatedTransactionId: relatedTransaction?.id
+            }
+        })
+
+        revalidatePath('/dashboard/finance')
+        revalidatePath('/dashboard/balance')
+        revalidatePath('/dashboard/annual-summary')
+
+        return { success: true }
+    } catch (error) {
+        console.error('Error cancelling transaction:', error)
+        return { error: 'Error al anular la transacción' }
     }
 }

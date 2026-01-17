@@ -28,6 +28,11 @@ export function formatAuditDetails(details: Record<string, any>, eventType: stri
         fromCurrency: 'Moneda origen',
         toCurrency: 'Moneda destino',
         exchangeRate: 'Tipo de cambio',
+        createdBy: 'Creado por',
+        cancelledBy: 'Anulado por',
+        cancellationReason: 'Motivo de anulación',
+        isExchange: 'Es cambio de moneda',
+        relatedTransactionId: 'ID transacción relacionada',
     }
 
     // Formatear valores según su tipo
