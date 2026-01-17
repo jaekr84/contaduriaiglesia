@@ -5,6 +5,8 @@ import { formatDateTime } from '@/lib/utils'
 import { formatCurrency } from '@/lib/dateUtils'
 import { X } from 'lucide-react'
 import { CancelTransactionDialog } from './CancelTransactionDialog'
+import { QuickTransactionRow } from './QuickTransactionRow'
+import { Category, Member } from '@prisma/client'
 
 interface Transaction {
     id: string
@@ -31,9 +33,11 @@ interface Transaction {
 interface Props {
     transactions: Transaction[]
     userRole: string
+    categories: Category[]
+    members: Member[]
 }
 
-export function TransactionsTable({ transactions, userRole }: Props) {
+export function TransactionsTable({ transactions, userRole, categories, members }: Props) {
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
 
     const canCancel = userRole === 'ADMIN' || userRole === 'TREASURER'
@@ -58,6 +62,12 @@ export function TransactionsTable({ transactions, userRole }: Props) {
                             </tr>
                         </thead>
                         <tbody className="[&_tr:last-child]:border-0">
+                            {/* Quick Entry Row */}
+                            <QuickTransactionRow
+                                categories={categories}
+                                members={members}
+                                userRole={userRole}
+                            />
                             {transactions.length === 0 ? (
                                 <tr>
                                     <td colSpan={canCancel ? 8 : 7} className="p-8 text-center text-zinc-500">

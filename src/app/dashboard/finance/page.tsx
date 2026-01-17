@@ -2,8 +2,10 @@ import { getFinanceSummary, getTransactions, getCategories } from './actions'
 import { Plus, ArrowUpCircle, ArrowDownCircle, Wallet, Settings } from 'lucide-react'
 import { formatDateTime } from '@/lib/utils'
 import { CreateTransactionDialog } from './components/CreateTransactionDialog'
-import { ExchangeDialog } from './components/ExchangeDialog'
+
 import { TransactionsTable } from './components/TransactionsTable'
+import { NewTransactionCard } from './components/NewTransactionCard'
+import { NewExchangeCard } from './components/NewExchangeCard'
 import { getMembers } from '../members/actions'
 import { requireProfile } from '@/lib/auth'
 import Link from 'next/link'
@@ -66,12 +68,11 @@ export default async function FinancePage(props: Props) {
                         <Settings className="mr-2 h-4 w-4" />
                         Categorías
                     </Link>
-                    <ExchangeDialog />
                     <CreateTransactionDialog categories={categories} members={members} />
                 </div>
             </div>
 
-            <FinanceFilters categories={categories} members={members} />
+
 
             {/* Summary Cards */}
             <div className="grid gap-4 md:grid-cols-3">
@@ -121,6 +122,12 @@ export default async function FinancePage(props: Props) {
                 </div>
             </div>
 
+            {/* New Transaction Card */}
+            <NewExchangeCard />
+            <NewTransactionCard categories={categories} members={members} />
+
+            <FinanceFilters categories={categories} members={members} />
+
             {/* Transactions List */}
             <TransactionsTable
                 transactions={transactions.map(t => ({
@@ -128,6 +135,8 @@ export default async function FinancePage(props: Props) {
                     amount: Number(t.amount)
                 }))}
                 userRole={profile.role}
+                categories={categories}
+                members={members}
             />
         </div>
     )

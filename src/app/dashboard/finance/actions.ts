@@ -192,10 +192,11 @@ export async function createTransaction(formData: FormData) {
     // Handle both date formats: "YYYY-MM-DD" (date input) or "YYYY-MM-DDTHH:mm" (datetime-local input)
     const dateStr = formData.get('date') as string
     let date: Date
-    if (dateStr.includes('T')) {
+
+    if (dateStr && dateStr.includes('T')) {
         // Has time component
         date = new Date(dateStr + '-03:00')
-    } else {
+    } else if (dateStr) {
         // Only date, use current time in Argentina timezone
         const now = new Date()
         const argTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Argentina/Buenos_Aires' }))
@@ -203,6 +204,11 @@ export async function createTransaction(formData: FormData) {
         const minutes = argTime.getMinutes().toString().padStart(2, '0')
         const seconds = argTime.getSeconds().toString().padStart(2, '0')
         date = new Date(`${dateStr}T${hours}:${minutes}:${seconds}-03:00`)
+    } else {
+        // Fallback to current date/time if no date provided
+        const now = new Date()
+        // We store in UTC/ISO, but ensuring we capture "now" is usually sufficient
+        date = now
     }
     const type = formData.get('type') as TransactionType
     const categoryId = formData.get('categoryId') as string

@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { signout } from '@/app/auth/actions'
 import { getCurrentProfile } from '@/lib/auth'
 import Link from 'next/link'
-import { LayoutDashboard, Users, Banknote, Menu, LineChart, PieChart, ShieldCheck as UsersKey, FileText } from 'lucide-react'
+import { LayoutDashboard, Users, Banknote, Menu, LineChart, PieChart, ShieldCheck as UsersKey, FileText, LogOut } from 'lucide-react'
 
 export default async function DashboardLayout({
     children,
@@ -14,108 +14,72 @@ export default async function DashboardLayout({
         redirect('/login')
     }
 
-    return (
-        <div className="flex h-screen w-full bg-zinc-50 dark:bg-black">
-            {/* Sidebar - Hidden on mobile, fixed on desktop */}
-            <aside className="hidden w-64 flex-col border-r border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950 md:flex">
-                <div className="flex h-16 items-center border-b border-zinc-200 px-6 dark:border-zinc-800">
-                    <span className="text-lg font-bold text-zinc-900 dark:text-zinc-50">Iglesia App</span>
-                </div>
-                <nav className="flex-1 space-y-1 p-4">
-                    <Link
-                        href="/dashboard"
-                        className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50"
-                    >
-                        <LayoutDashboard className="h-4 w-4" />
-                        Dashboard
-                    </Link>
-                    <Link
-                        href="/dashboard/members"
-                        className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50"
-                    >
-                        <Users className="h-4 w-4" />
-                        Miembros
-                    </Link>
-                    <Link
-                        href="/dashboard/finance"
-                        className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50"
-                    >
-                        <Banknote className="h-4 w-4" />
-                        Finanzas
-                    </Link>
-                    <Link
-                        href="/dashboard/balance"
-                        className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50"
-                    >
-                        <LineChart className="h-4 w-4" />
-                        Estado Financiero
-                    </Link>
-                    <Link
-                        href="/dashboard/annual-summary"
-                        className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50"
-                    >
-                        <PieChart className="h-4 w-4" />
-                        Resumen Anual
-                    </Link>
-                    <Link
-                        href="/dashboard/reports"
-                        className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50"
-                    >
-                        <FileText className="h-4 w-4" />
-                        Reportes
-                    </Link>
+    const navItems = [
+        { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { href: '/dashboard/members', label: 'Miembros', icon: Users },
+        { href: '/dashboard/finance', label: 'Finanzas', icon: Banknote },
+        { href: '/dashboard/balance', label: 'Balance', icon: LineChart },
+        { href: '/dashboard/annual-summary', label: 'Resumen', icon: PieChart },
+        { href: '/dashboard/reports', label: 'Reportes', icon: FileText },
+    ]
 
-                    {profile.role === 'ADMIN' && (
-                        <>
+    if (profile.role === 'ADMIN') {
+        navItems.push(
+            { href: '/dashboard/users', label: 'Usuarios', icon: UsersKey },
+            { href: '/dashboard/audit-logs', label: 'Auditoría', icon: FileText }
+        )
+    }
+
+    return (
+        <div className="flex min-h-screen w-full flex-col bg-zinc-50 dark:bg-black">
+            {/* Top Navigation Bar */}
+            <header className="sticky top-0 z-50 flex h-14 items-center justify-between border-b border-zinc-200 bg-white px-4 dark:border-zinc-800 dark:bg-zinc-950 shadow-sm">
+                <div className="flex items-center gap-4">
+                    <span className="text-lg font-bold text-zinc-900 dark:text-zinc-50 mr-4">Iglesia App</span>
+
+                    {/* Desktop/Tablet Navigation - Scrollable if too many items */}
+                    <nav className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+                        {navItems.map((item) => (
                             <Link
-                                href="/dashboard/users"
-                                className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50"
+                                key={item.href}
+                                href={item.href}
+                                title={item.label}
+                                className="flex h-10 w-10 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus:bg-zinc-100 focus:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
                             >
-                                <UsersKey className="h-4 w-4" />
-                                Usuarios
+                                <item.icon className="h-5 w-5" />
                             </Link>
-                            <Link
-                                href="/dashboard/audit-logs"
-                                className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50"
-                            >
-                                <FileText className="h-4 w-4" />
-                                Logs de Auditoría
-                            </Link>
-                        </>
-                    )}
-                </nav>
-                <div className="border-t border-zinc-200 p-4 dark:border-zinc-800">
-                    <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-full bg-zinc-200 dark:bg-zinc-800" />
-                        <div className="flex flex-col">
-                            <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                        ))}
+                    </nav>
+                </div>
+
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3 border-l border-zinc-200 pl-4 dark:border-zinc-800">
+                        <div className="flex flex-col text-right hidden sm:flex">
+                            <span className="text-xs font-medium text-zinc-900 dark:text-zinc-50">
                                 {profile.email.split('@')[0]}
                             </span>
-                            <span className="text-xs text-zinc-500 dark:text-zinc-400">Admin</span>
+                            <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                                {profile.role}
+                            </span>
                         </div>
+                        <div className="h-8 w-8 rounded-full bg-zinc-200 dark:bg-zinc-800" />
+
+                        <form action={signout}>
+                            <button
+                                type="submit"
+                                title="Cerrar Sesión"
+                                className="flex h-10 w-10 items-center justify-center rounded-md text-zinc-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+                            >
+                                <LogOut className="h-5 w-5" />
+                            </button>
+                        </form>
                     </div>
-                    <form action={signout} className="mt-4">
-                        <button
-                            type="submit"
-                            className="w-full text-left text-sm text-red-500 hover:text-red-600 dark:text-red-400"
-                        >
-                            Cerrar Sesión
-                        </button>
-                    </form>
                 </div>
-            </aside>
+            </header>
 
             {/* Main Content */}
-            <main className="flex flex-1 flex-col overflow-y-auto">
-                {/* Mobile Header */}
-                <div className="flex h-16 items-center justify-between border-b border-zinc-200 bg-white px-4 dark:border-zinc-800 dark:bg-zinc-950 md:hidden">
-                    <span className="font-bold text-zinc-900 dark:text-zinc-50">Iglesia App</span>
-                    <button className="rounded-md p-2 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-900">
-                        <Menu className="h-5 w-5" />
-                    </button>
-                </div>
-
-                <div className="flex-1 p-8">
+            <main className="flex-1 overflow-y-auto w-full">
+                <div className="w-full h-full p-4 md:p-8">
                     {children}
                 </div>
             </main>

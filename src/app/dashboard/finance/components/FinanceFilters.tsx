@@ -51,154 +51,117 @@ export function FinanceFilters({ categories, members }: Props) {
                     <Loader2 className="h-6 w-6 animate-spin text-zinc-900 dark:text-zinc-50" />
                 </div>
             )}
-            <div className="flex items-center gap-2 mb-4 text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                <Filter className="h-4 w-4" />
-                Filtros
-                {hasActiveFilters && (
-                    <button
-                        onClick={clearFilters}
-                        className="ml-auto text-xs text-red-500 hover:underline flex items-center gap-1"
-                    >
-                        <RotateCcw className="h-3 w-3" />
-                        Limpiar
-                    </button>
-                )}
-            </div>
 
-            <div className="space-y-3">
-                {/* Row 1: Main Filters */}
-                <div className="grid gap-3 grid-cols-3">
-                    {/* Month/Year Selector */}
-                    <div className="space-y-1">
-                        <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Mes</label>
-                        <input
-                            type="month"
-                            value={(() => {
-                                if (dateFrom) {
-                                    return dateFrom.slice(0, 7)
-                                }
-                                const now = new Date()
-                                return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-                            })()}
-                            onChange={(e) => {
-                                const yearMonth = e.target.value
-                                if (yearMonth) {
-                                    const [year, month] = yearMonth.split('-')
-                                    const firstDay = `${year}-${month}-01`
-                                    const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate()
-                                    const lastDayStr = `${year}-${month}-${String(lastDay).padStart(2, '0')}`
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                {/* Month/Year Selector */}
+                <input
+                    type="month"
+                    value={(() => {
+                        if (dateFrom) {
+                            return dateFrom.slice(0, 7)
+                        }
+                        const now = new Date()
+                        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+                    })()}
+                    onChange={(e) => {
+                        const yearMonth = e.target.value
+                        if (yearMonth) {
+                            const [year, month] = yearMonth.split('-')
+                            const firstDay = `${year}-${month}-01`
+                            const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate()
+                            const lastDayStr = `${year}-${month}-${String(lastDay).padStart(2, '0')}`
 
-                                    const params = new URLSearchParams(searchParams)
-                                    params.set('dateFrom', firstDay)
-                                    params.set('dateTo', lastDayStr)
-                                    startTransition(() => {
-                                        router.replace(`${pathname}?${params.toString()}`)
-                                    })
-                                }
-                            }}
-                            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 dark:border-zinc-800 dark:bg-zinc-950"
-                        />
-                    </div>
+                            const params = new URLSearchParams(searchParams)
+                            params.set('dateFrom', firstDay)
+                            params.set('dateTo', lastDayStr)
+                            startTransition(() => {
+                                router.replace(`${pathname}?${params.toString()}`)
+                            })
+                        }
+                    }}
+                    className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 dark:border-zinc-800 dark:bg-zinc-950"
+                />
 
-                    {/* Type */}
-                    <div className="space-y-1">
-                        <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Tipo</label>
-                        <select
-                            value={type}
-                            onChange={(e) => updateFilter('type', e.target.value)}
-                            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 dark:border-zinc-800 dark:bg-zinc-950"
-                        >
-                            <option value="">Todos</option>
-                            <option value="INCOME">Ingresos</option>
-                            <option value="EXPENSE">Gastos</option>
-                        </select>
-                    </div>
+                {/* Type */}
+                <select
+                    value={type}
+                    onChange={(e) => updateFilter('type', e.target.value)}
+                    className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 dark:border-zinc-800 dark:bg-zinc-950"
+                >
+                    <option value="">Tipo</option>
+                    <option value="INCOME">Ingresos</option>
+                    <option value="EXPENSE">Gastos</option>
+                </select>
 
-                    {/* Category (Parent) */}
-                    <div className="space-y-1">
-                        <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Categoría</label>
-                        <select
-                            value={(() => {
-                                const active = categories.find(c => c.id === categoryId)
-                                if (!active) return ''
-                                return active.parentId || active.id
-                            })()}
-                            onChange={(e) => {
-                                const newParentId = e.target.value
-                                updateFilter('categoryId', newParentId)
-                            }}
-                            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 dark:border-zinc-800 dark:bg-zinc-950"
-                        >
-                            <option value="">Todas</option>
-                            {categories.filter(c => !c.parentId).map(parent => (
-                                <option key={parent.id} value={parent.id}>{parent.name}</option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
+                {/* Category (Parent) */}
+                <select
+                    value={(() => {
+                        const active = categories.find(c => c.id === categoryId)
+                        if (!active) return ''
+                        return active.parentId || active.id
+                    })()}
+                    onChange={(e) => {
+                        const newParentId = e.target.value
+                        updateFilter('categoryId', newParentId)
+                    }}
+                    className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 dark:border-zinc-800 dark:bg-zinc-950"
+                >
+                    <option value="">Categoría</option>
+                    {categories.filter(c => !c.parentId).map(parent => (
+                        <option key={parent.id} value={parent.id}>{parent.name}</option>
+                    ))}
+                </select>
 
-                {/* Row 2: Secondary Filters */}
-                <div className="grid gap-3 grid-cols-3">
-                    {/* Subcategory */}
-                    <div className="space-y-1">
-                        <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Subcategoría</label>
-                        <select
-                            value={(() => {
-                                const active = categories.find(c => c.id === categoryId)
-                                return active?.parentId ? active.id : ''
-                            })()}
-                            onChange={(e) => {
-                                const newSubId = e.target.value
-                                if (newSubId) {
-                                    updateFilter('categoryId', newSubId)
-                                } else {
-                                    const active = categories.find(c => c.id === categoryId)
-                                    const parentId = active?.parentId || active?.id
-                                    if (parentId) updateFilter('categoryId', parentId)
-                                    else updateFilter('categoryId', '')
-                                }
-                            }}
-                            disabled={(() => {
-                                const active = categories.find(c => c.id === categoryId)
-                                const currentParentId = active?.parentId || active?.id
-                                return !currentParentId || categories.filter(sub => sub.parentId === currentParentId).length === 0
-                            })()}
-                            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-950"
-                        >
-                            <option value="">Todas</option>
-                            {(() => {
-                                const active = categories.find(c => c.id === categoryId)
-                                const parentId = active?.parentId || active?.id
-                                if (!parentId) return null
-                                return categories
-                                    .filter(sub => sub.parentId === parentId)
-                                    .map(sub => (
-                                        <option key={sub.id} value={sub.id}>{sub.name}</option>
-                                    ))
-                            })()}
-                        </select>
-                    </div>
+                {/* Subcategory */}
+                <select
+                    value={(() => {
+                        const active = categories.find(c => c.id === categoryId)
+                        return active?.parentId ? active.id : ''
+                    })()}
+                    onChange={(e) => {
+                        const newSubId = e.target.value
+                        if (newSubId) {
+                            updateFilter('categoryId', newSubId)
+                        } else {
+                            const active = categories.find(c => c.id === categoryId)
+                            const parentId = active?.parentId || active?.id
+                            if (parentId) updateFilter('categoryId', parentId)
+                            else updateFilter('categoryId', '')
+                        }
+                    }}
+                    disabled={(() => {
+                        const active = categories.find(c => c.id === categoryId)
+                        const currentParentId = active?.parentId || active?.id
+                        return !currentParentId || categories.filter(sub => sub.parentId === currentParentId).length === 0
+                    })()}
+                    className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-950"
+                >
+                    <option value="">Subcategoría</option>
+                    {(() => {
+                        const active = categories.find(c => c.id === categoryId)
+                        const parentId = active?.parentId || active?.id
+                        if (!parentId) return null
+                        return categories
+                            .filter(sub => sub.parentId === parentId)
+                            .map(sub => (
+                                <option key={sub.id} value={sub.id}>{sub.name}</option>
+                            ))
+                    })()}
+                </select>
 
-                    {/* Member */}
-                    <div className="space-y-1">
-                        <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Miembro</label>
-                        <select
-                            value={memberId}
-                            onChange={(e) => updateFilter('memberId', e.target.value)}
-                            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 dark:border-zinc-800 dark:bg-zinc-950"
-                        >
-                            <option value="">Todos</option>
-                            {members.map(m => (
-                                <option key={m.id} value={m.id}>
-                                    {m.lastName}, {m.firstName}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Empty space for alignment */}
-                    <div></div>
-                </div>
+                {/* Member */}
+                <select
+                    value={memberId}
+                    onChange={(e) => updateFilter('memberId', e.target.value)}
+                    className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 dark:border-zinc-800 dark:bg-zinc-950"
+                >
+                    <option value="">Miembro</option>
+                    {members.map(m => (
+                        <option key={m.id} value={m.id}>
+                            {m.lastName}, {m.firstName}
+                        </option>
+                    ))}
+                </select>
             </div>
         </div>
     )
