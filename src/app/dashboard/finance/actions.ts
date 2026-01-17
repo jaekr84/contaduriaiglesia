@@ -137,32 +137,39 @@ export async function getFinanceSummary(filters?: FinanceFilters) {
         }
     }
 
-    const transactions = await prisma.transaction.findMany({
-        where
+    const groups = await prisma.transaction.groupBy({
+        by: ['currency', 'type'],
+        where,
+        _sum: {
+            amount: true,
+        },
     })
 
     const totals = {
         ARS: { income: 0, expense: 0 },
-        USD: { income: 0, expense: 0 }
+        USD: { income: 0, expense: 0 },
     }
 
-    transactions.forEach(t => {
-        const curr = t.currency || 'ARS' // Default to ARS for old data if any
-        if (t.type === 'INCOME') totals[curr].income += Number(t.amount)
-        if (t.type === 'EXPENSE') totals[curr].expense += Number(t.amount)
+    groups.forEach((group) => {
+        const currency = group.currency || 'ARS'
+        const type = group.type
+        const amount = Number(group._sum.amount || 0)
+
+        if (type === 'INCOME') totals[currency].income += amount
+        if (type === 'EXPENSE') totals[currency].expense += amount
     })
 
     return {
         ARS: {
             income: totals.ARS.income,
             expense: totals.ARS.expense,
-            balance: totals.ARS.income - totals.ARS.expense
+            balance: totals.ARS.income - totals.ARS.expense,
         },
         USD: {
             income: totals.USD.income,
             expense: totals.USD.expense,
-            balance: totals.USD.income - totals.USD.expense
-        }
+            balance: totals.USD.income - totals.USD.expense,
+        },
     }
 }
 

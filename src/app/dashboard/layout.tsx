@@ -1,5 +1,4 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
 import { signout } from '@/app/auth/actions'
 import { getCurrentProfile } from '@/lib/auth'
 import Link from 'next/link'
@@ -10,19 +9,8 @@ export default async function DashboardLayout({
 }: {
     children: React.ReactNode
 }) {
-    const supabase = await createClient()
-
-    const {
-        data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-        redirect('/login')
-    }
-
     const profile = await getCurrentProfile()
     if (!profile) {
-        // Handle case where auth user exists but no profile (shouldn't happen in normal flow)
         redirect('/login')
     }
 
@@ -78,7 +66,7 @@ export default async function DashboardLayout({
                         <div className="h-8 w-8 rounded-full bg-zinc-200 dark:bg-zinc-800" />
                         <div className="flex flex-col">
                             <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                                {user.email?.split('@')[0]}
+                                {profile.email.split('@')[0]}
                             </span>
                             <span className="text-xs text-zinc-500 dark:text-zinc-400">Admin</span>
                         </div>

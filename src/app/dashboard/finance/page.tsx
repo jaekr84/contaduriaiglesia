@@ -32,10 +32,12 @@ export default async function FinancePage(props: Props) {
         query: searchParams.query,
     }
 
-    const summary = await getFinanceSummary(filters)
-    const transactions = await getTransactions(filters)
-    const categories = await getCategories()
-    const members = await getMembers()
+    const [summary, transactions, categories, members] = await Promise.all([
+        getFinanceSummary(filters),
+        getTransactions(filters),
+        getCategories(),
+        getMembers(),
+    ])
 
     const formatCurrency = (amount: number, currency: string = 'ARS') => {
         return new Intl.NumberFormat('es-AR', {

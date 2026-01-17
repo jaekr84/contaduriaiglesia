@@ -93,8 +93,9 @@ export function CreateTransactionDialog({ categories, members }: Props) {
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Registrar Movimiento</h2>
                             <button
-                                onClick={() => setIsOpen(false)}
-                                className="rounded-full p-2 text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                                onClick={() => !isPending && setIsOpen(false)}
+                                disabled={isPending}
+                                className="rounded-full p-2 text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <X className="h-4 w-4" />
                             </button>
@@ -127,180 +128,181 @@ export function CreateTransactionDialog({ categories, members }: Props) {
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-zinc-900 dark:text-zinc-50">Moneda</label>
-                                <div className="flex rounded-md shadow-sm">
-                                    <button
-                                        type="button"
-                                        onClick={() => setCurrency('ARS')}
-                                        className={`flex-1 rounded-l-md border py-2 text-sm font-medium focus:z-10 focus:outline-none focus:ring-1 focus:ring-zinc-950 ${currency === 'ARS'
-                                            ? 'bg-zinc-900 text-white border-zinc-900 dark:bg-zinc-50 dark:text-zinc-900 dark:border-zinc-50'
-                                            : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-50 dark:bg-zinc-950 dark:text-zinc-300 dark:border-zinc-800 dark:hover:bg-zinc-900'
-                                            }`}
-                                    >
-                                        Pesos (ARS)
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setCurrency('USD')}
-                                        className={`flex-1 rounded-r-md border-t border-b border-r py-2 text-sm font-medium focus:z-10 focus:outline-none focus:ring-1 focus:ring-zinc-950 ${currency === 'USD'
-                                            ? 'bg-zinc-900 text-white border-zinc-900 dark:bg-zinc-50 dark:text-zinc-900 dark:border-zinc-50'
-                                            : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-50 dark:bg-zinc-950 dark:text-zinc-300 dark:border-zinc-800 dark:hover:bg-zinc-900'
-                                            }`}
-                                    >
-                                        Dólares (USD)
-                                    </button>
+                            <fieldset disabled={isPending} className="space-y-4 disabled:opacity-70">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-zinc-900 dark:text-zinc-50">Moneda</label>
+                                    <div className="flex rounded-md shadow-sm">
+                                        <button
+                                            type="button"
+                                            onClick={() => setCurrency('ARS')}
+                                            className={`flex-1 rounded-l-md border py-2 text-sm font-medium focus:z-10 focus:outline-none focus:ring-1 focus:ring-zinc-950 ${currency === 'ARS'
+                                                ? 'bg-zinc-900 text-white border-zinc-900 dark:bg-zinc-50 dark:text-zinc-900 dark:border-zinc-50'
+                                                : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-50 dark:bg-zinc-950 dark:text-zinc-300 dark:border-zinc-800 dark:hover:bg-zinc-900'
+                                                }`}
+                                        >
+                                            Pesos (ARS)
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setCurrency('USD')}
+                                            className={`flex-1 rounded-r-md border-t border-b border-r py-2 text-sm font-medium focus:z-10 focus:outline-none focus:ring-1 focus:ring-zinc-950 ${currency === 'USD'
+                                                ? 'bg-zinc-900 text-white border-zinc-900 dark:bg-zinc-50 dark:text-zinc-900 dark:border-zinc-50'
+                                                : 'bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-50 dark:bg-zinc-950 dark:text-zinc-300 dark:border-zinc-800 dark:hover:bg-zinc-900'
+                                                }`}
+                                        >
+                                            Dólares (USD)
+                                        </button>
+                                    </div>
+                                    <input type="hidden" name="currency" value={currency} />
                                 </div>
-                                <input type="hidden" name="currency" value={currency} />
-                            </div>
 
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-zinc-900 dark:text-zinc-50">Monto</label>
-                                <div className="relative">
-                                    <span className="absolute left-3 top-2 text-zinc-500">{currency === 'ARS' ? '$' : 'US$'}</span>
-                                    <MoneyInput
-                                        name="amount"
-                                        required
-                                        placeholder="0,00"
-                                        className="flex h-9 w-full rounded-md border border-zinc-200 bg-white pl-12 pr-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950 dark:placeholder:text-zinc-400 dark:focus-visible:ring-zinc-300"
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-zinc-900 dark:text-zinc-50">Monto</label>
+                                    <div className="relative">
+                                        <span className="absolute left-3 top-2 text-zinc-500">{currency === 'ARS' ? '$' : 'US$'}</span>
+                                        <MoneyInput
+                                            name="amount"
+                                            required
+                                            placeholder="0,00"
+                                            className="flex h-9 w-full rounded-md border border-zinc-200 bg-white pl-12 pr-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950 dark:placeholder:text-zinc-400 dark:focus-visible:ring-zinc-300"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-zinc-900 dark:text-zinc-50">Descripción (Opcional)</label>
+                                    <input
+                                        name="description"
+                                        placeholder="Detalles adicionales (ej. Mes Enero)"
+                                        className="flex h-9 w-full rounded-md border border-zinc-200 bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950 dark:placeholder:text-zinc-400 dark:focus-visible:ring-zinc-300"
                                     />
                                 </div>
-                            </div>
 
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-zinc-900 dark:text-zinc-50">Descripción (Opcional)</label>
-                                <input
-                                    name="description"
-                                    placeholder="Detalles adicionales (ej. Mes Enero)"
-                                    className="flex h-9 w-full rounded-md border border-zinc-200 bg-white px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950 dark:placeholder:text-zinc-400 dark:focus-visible:ring-zinc-300"
-                                />
-                            </div>
+                                <div className="space-y-4 rounded-md border border-zinc-200 p-4 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                                            {isNewCategory ? 'Nueva Categoría' : 'Categoría'}
+                                        </label>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setIsNewCategory(!isNewCategory)
+                                                setNewCategoryName('')
+                                                setSelectedSubId('')
+                                            }}
+                                            className="text-xs font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400"
+                                        >
+                                            {isNewCategory ? 'Seleccionar existente' : 'Crear nueva'}
+                                        </button>
+                                    </div>
 
-                            <div className="space-y-4 rounded-md border border-zinc-200 p-4 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
-                                <div className="flex items-center justify-between">
-                                    <label className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                                        {isNewCategory ? 'Nueva Categoría' : 'Categoría'}
-                                    </label>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setIsNewCategory(!isNewCategory)
-                                            setNewCategoryName('')
-                                            setSelectedSubId('')
-                                            // Don't clear selectedParentId so it persists as default parent
-                                        }}
-                                        className="text-xs font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400"
-                                    >
-                                        {isNewCategory ? 'Seleccionar existente' : 'Crear nueva'}
-                                    </button>
-                                </div>
-
-                                {isNewCategory ? (
-                                    <div className="space-y-3 animate-in slide-in-from-top-2 duration-200">
-                                        <input
-                                            value={newCategoryName}
-                                            onChange={(e) => setNewCategoryName(e.target.value)}
-                                            placeholder="Nombre de la nueva categoría"
-                                            className="flex h-9 w-full rounded-md border border-zinc-200 bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950 dark:focus-visible:ring-zinc-300"
-                                        />
-                                        <div className="space-y-1">
-                                            <label className="text-xs text-zinc-500">Categoría Padre (Opcional - Para crear subcategoría):</label>
+                                    {isNewCategory ? (
+                                        <div className="space-y-3 animate-in slide-in-from-top-2 duration-200">
+                                            <input
+                                                value={newCategoryName}
+                                                onChange={(e) => setNewCategoryName(e.target.value)}
+                                                placeholder="Nombre de la nueva categoría"
+                                                className="flex h-9 w-full rounded-md border border-zinc-200 bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950 dark:focus-visible:ring-zinc-300"
+                                            />
+                                            <div className="space-y-1">
+                                                <label className="text-xs text-zinc-500">Categoría Padre (Opcional - Para crear subcategoría):</label>
+                                                <select
+                                                    value={selectedParentId}
+                                                    onChange={(e) => setSelectedParentId(e.target.value)}
+                                                    className="flex h-9 w-full rounded-md border border-zinc-200 bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950 dark:focus-visible:ring-zinc-300"
+                                                >
+                                                    <option value="">-- Ninguna (Crear como Principal) --</option>
+                                                    {filteredCategories.filter(c => !c.parentId).map(parent => (
+                                                        <option key={parent.id} value={parent.id}>
+                                                            {parent.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3">
                                             <select
+                                                required={!isNewCategory}
                                                 value={selectedParentId}
-                                                onChange={(e) => setSelectedParentId(e.target.value)}
+                                                onChange={(e) => {
+                                                    setSelectedParentId(e.target.value)
+                                                    setSelectedSubId('')
+                                                }}
                                                 className="flex h-9 w-full rounded-md border border-zinc-200 bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950 dark:focus-visible:ring-zinc-300"
                                             >
-                                                <option value="">-- Ninguna (Crear como Principal) --</option>
+                                                <option value="">Seleccionar Categoría...</option>
                                                 {filteredCategories.filter(c => !c.parentId).map(parent => (
                                                     <option key={parent.id} value={parent.id}>
                                                         {parent.name}
                                                     </option>
                                                 ))}
                                             </select>
+
+                                            {selectedParentId && filteredCategories.some(c => c.parentId === selectedParentId) && (
+                                                <div className="space-y-1 animate-in slide-in-from-top-2 duration-200">
+                                                    <label className="text-xs text-zinc-500">Subcategoría (Opcional)</label>
+                                                    <select
+                                                        value={selectedSubId}
+                                                        onChange={(e) => setSelectedSubId(e.target.value)}
+                                                        className="flex h-9 w-full rounded-md border border-zinc-200 bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950 dark:focus-visible:ring-zinc-300"
+                                                    >
+                                                        <option value="">General / Ninguna</option>
+                                                        {filteredCategories
+                                                            .filter(c => c.parentId === selectedParentId)
+                                                            .map(sub => (
+                                                                <option key={sub.id} value={sub.id}>
+                                                                    {sub.name}
+                                                                </option>
+                                                            ))}
+                                                    </select>
+                                                </div>
+                                            )}
                                         </div>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-3">
+                                    )}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-zinc-900 dark:text-zinc-50">Fecha</label>
+                                    <input
+                                        name="date"
+                                        type="date"
+                                        required
+                                        defaultValue={new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Argentina/Buenos_Aires' })}
+                                        className="flex h-9 w-full rounded-md border border-zinc-200 bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950 dark:focus-visible:ring-zinc-300"
+                                    />
+                                </div>
+
+                                {type === 'INCOME' && (
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium text-zinc-900 dark:text-zinc-50">Miembro (Opcional)</label>
                                         <select
-                                            required={!isNewCategory}
-                                            value={selectedParentId}
-                                            onChange={(e) => {
-                                                setSelectedParentId(e.target.value)
-                                                setSelectedSubId('')
-                                            }}
+                                            name="memberId"
                                             className="flex h-9 w-full rounded-md border border-zinc-200 bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950 dark:focus-visible:ring-zinc-300"
                                         >
-                                            <option value="">Seleccionar Categoría...</option>
-                                            {filteredCategories.filter(c => !c.parentId).map(parent => (
-                                                <option key={parent.id} value={parent.id}>
-                                                    {parent.name}
-                                                </option>
+                                            <option value="none">-- Anónimo / General --</option>
+                                            {members.map(m => (
+                                                <option key={m.id} value={m.id}>{m.lastName}, {m.firstName}</option>
                                             ))}
                                         </select>
-
-                                        {selectedParentId && filteredCategories.some(c => c.parentId === selectedParentId) && (
-                                            <div className="space-y-1 animate-in slide-in-from-top-2 duration-200">
-                                                <label className="text-xs text-zinc-500">Subcategoría (Opcional)</label>
-                                                <select
-                                                    value={selectedSubId}
-                                                    onChange={(e) => setSelectedSubId(e.target.value)}
-                                                    className="flex h-9 w-full rounded-md border border-zinc-200 bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950 dark:focus-visible:ring-zinc-300"
-                                                >
-                                                    <option value="">General / Ninguna</option>
-                                                    {filteredCategories
-                                                        .filter(c => c.parentId === selectedParentId)
-                                                        .map(sub => (
-                                                            <option key={sub.id} value={sub.id}>
-                                                                {sub.name}
-                                                            </option>
-                                                        ))}
-                                                </select>
-                                            </div>
-                                        )}
                                     </div>
                                 )}
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-zinc-900 dark:text-zinc-50">Fecha</label>
-                                <input
-                                    name="date"
-                                    type="date"
-                                    required
-                                    defaultValue={new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Argentina/Buenos_Aires' })}
-                                    className="flex h-9 w-full rounded-md border border-zinc-200 bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950 dark:focus-visible:ring-zinc-300"
-                                />
-                            </div>
-
-                            {type === 'INCOME' && (
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium text-zinc-900 dark:text-zinc-50">Miembro (Opcional)</label>
-                                    <select
-                                        name="memberId"
-                                        className="flex h-9 w-full rounded-md border border-zinc-200 bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950 dark:focus-visible:ring-zinc-300"
-                                    >
-                                        <option value="none">-- Anónimo / General --</option>
-                                        {members.map(m => (
-                                            <option key={m.id} value={m.id}>{m.lastName}, {m.firstName}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            )}
-
-                            <input type="hidden" name="paymentMethod" value="CASH" /> {/* Default for now */}
+                                <input type="hidden" name="paymentMethod" value="CASH" />
+                            </fieldset>
 
                             <div className="flex justify-end gap-2 mt-6">
                                 <button
                                     type="button"
+                                    disabled={isPending}
                                     onClick={() => setIsOpen(false)}
-                                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-zinc-200 bg-transparent text-zinc-900 shadow-sm hover:bg-zinc-100 h-9 px-4 py-2 dark:border-zinc-800 dark:text-zinc-50 dark:hover:bg-zinc-800"
+                                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors border border-zinc-200 bg-transparent text-zinc-900 shadow-sm hover:bg-zinc-100 h-9 px-4 py-2 dark:border-zinc-800 dark:text-zinc-50 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     Cancelar
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={isPending}
-                                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors bg-zinc-900 text-zinc-50 shadow hover:bg-zinc-900/90 h-9 px-4 py-2 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-50/90"
+                                    className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors bg-zinc-900 text-zinc-50 shadow hover:bg-zinc-900/90 h-9 px-4 py-2 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-50/90 disabled:opacity-50 disabled:cursor-wait"
                                 >
                                     {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     Guardar
