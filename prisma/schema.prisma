@@ -18,6 +18,7 @@ model Organization {
   categories   Category[]
   members      Member[]
   invitations  Invitation[]
+  auditLogs    AuditLog[]
 }
 
 model Invitation {
@@ -148,4 +149,63 @@ enum PaymentMethod {
   CREDIT
   QR
   OTHER
+}
+
+model AuditLog {
+  id             String         @id @default(uuid())
+  eventType      AuditEventType
+  severity       AuditSeverity  @default(INFO)
+  userId         String?        // Puede ser null para intentos fallidos
+  userEmail      String
+  organizationId String
+  organization   Organization   @relation(fields: [organizationId], references: [id])
+
+  // Detalles del evento (incluye diff para updates)
+  details     Json?   // Para updates: { "previous": {...}, "new": {...} }
+  ipAddress   String?
+  userAgent   String?
+
+  // Metadata
+  resourceType String? // ej: "Transaction", "Category", "Member"
+  resourceId   String? // ID del recurso afectado
+
+  createdAt DateTime @default(now())
+
+  @@index([organizationId, createdAt])
+  @@index([userId])
+  @@index([eventType])
+  @@index([severity])
+}
+
+enum AuditEventType {
+  // Authentication
+  LOGIN_SUCCESS
+  LOGIN_FAILED
+  LOGOUT
+
+  // Transactions
+  TRANSACTION_CREATED
+  TRANSACTION_UPDATED
+  TRANSACTION_DELETED
+
+  // Categories
+  CATEGORY_CREATED
+  CATEGORY_UPDATED
+  CATEGORY_DELETED
+
+  // Members
+  MEMBER_CREATED
+  MEMBER_UPDATED
+  MEMBER_DELETED
+
+  // Users & Invitations
+  USER_INVITED
+  USER_REMOVED
+  INVITATION_REVOKED
+}
+
+enum AuditSeverity {
+  INFO     // Operaciones normales
+  WARN     // Eventos que requieren atención
+  CRITICAL // Fallos de login, eliminaciones, cambios importantes
 }

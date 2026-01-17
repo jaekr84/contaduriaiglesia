@@ -66,13 +66,22 @@ export default async function DashboardLayout({
                     </Link>
 
                     {profile.role === 'ADMIN' && (
-                        <Link
-                            href="/dashboard/users"
-                            className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50"
-                        >
-                            <UsersKey className="h-4 w-4" />
-                            Usuarios
-                        </Link>
+                        <>
+                            <Link
+                                href="/dashboard/users"
+                                className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50"
+                            >
+                                <UsersKey className="h-4 w-4" />
+                                Usuarios
+                            </Link>
+                            <Link
+                                href="/dashboard/audit-logs"
+                                className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50"
+                            >
+                                <FileText className="h-4 w-4" />
+                                Logs de Auditoría
+                            </Link>
+                        </>
                     )}
                 </nav>
                 <div className="border-t border-zinc-200 p-4 dark:border-zinc-800">

@@ -6,6 +6,8 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 
 import { cookies } from 'next/headers'
+import { createAuditLog } from '@/lib/audit'
+import { getCurrentProfile } from '@/lib/auth'
 
 export async function login(formData: FormData) {
     const supabase = await createClient()
@@ -20,13 +22,29 @@ export async function login(formData: FormData) {
     })
 
     if (error || !user) {
+        // Log failed login attempt
+        try {
+            const profile = await prisma.profile.findFirst({
+                where: { email }
+            })
+            if (profile) {
+                await createAuditLog({
+                    eventType: 'LOGIN_FAILED',
+                    userEmail: email,
+                    organizationId: profile.organizationId,
+                    details: { reason: error?.message || 'Error desconocido' }
+                })
+            }
+        } catch (auditError) {
+            console.error('Failed to log failed login:', auditError)
+        }
         return { error: error?.message || 'Error al iniciar sesión' }
     }
 
     // Generate and save session ID
     const sessionId = crypto.randomUUID()
 
-    await prisma.profile.update({
+    const profile = await prisma.profile.update({
         where: { id: user.id },
         data: { sessionId }
     })
@@ -39,6 +57,14 @@ export async function login(formData: FormData) {
         sameSite: 'lax',
         path: '/',
         maxAge: 60 * 60 * 24 * 7 // 1 week
+    })
+
+    // Log successful login
+    await createAuditLog({
+        eventType: 'LOGIN_SUCCESS',
+        userId: user.id,
+        userEmail: email,
+        organizationId: profile.organizationId
     })
 
     revalidatePath('/', 'layout')
@@ -67,6 +93,9 @@ export async function signup(formData: FormData) {
         try {
             // Create a default organization for the new user
             // We use a transaction to ensure both are created or neither
+            let newOrgId: string
+            const sessionId = crypto.randomUUID()
+
             await prisma.$transaction(async (tx) => {
                 const orgName = `Iglesia de ${email.split('@')[0]}`
 
@@ -76,7 +105,7 @@ export async function signup(formData: FormData) {
                     },
                 })
 
-                const sessionId = crypto.randomUUID()
+                newOrgId = newOrg.id
 
                 await tx.profile.create({
                     data: {
@@ -90,10 +119,24 @@ export async function signup(formData: FormData) {
                 })
             })
 
+            // Log successful signup
+            await createAuditLog({
+                eventType: 'LOGIN_SUCCESS',
+                userId: data.user.id,
+                userEmail: email,
+                organizationId: newOrgId!,
+                details: { action: 'signup', organizationCreated: true }
+            })
+
             // Set session cookie after successful transaction
-            const sessionId = crypto.randomUUID() // Valid? No, we need the SAME UUID.
-            // Wait, I cannot extract the sessionId from the transaction closure easily unless I define it outside.
-            // Let's redefine.
+            const cookieStore = await cookies()
+            cookieStore.set('device_session', sessionId, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+                path: '/',
+                maxAge: 60 * 60 * 24 * 7 // 1 week
+            })
         } catch (dbError) {
             console.error('Error creating user profile:', dbError)
             return { error: 'Error configurando la cuenta. Por favor intente nuevamente.' }
@@ -106,6 +149,22 @@ export async function signup(formData: FormData) {
 
 export async function signout() {
     const supabase = await createClient()
+
+    // Get current user info before signing out
+    try {
+        const profile = await getCurrentProfile()
+        if (profile) {
+            await createAuditLog({
+                eventType: 'LOGOUT',
+                userId: profile.id,
+                userEmail: profile.email,
+                organizationId: profile.organizationId
+            })
+        }
+    } catch (error) {
+        console.error('Failed to log logout:', error)
+    }
+
     await supabase.auth.signOut()
     revalidatePath('/', 'layout')
     redirect('/login')

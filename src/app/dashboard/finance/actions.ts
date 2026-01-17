@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import prisma from '@/lib/prisma'
 import { requireProfile } from '@/lib/auth'
 import { Prisma, TransactionType, PaymentMethod, Currency } from '@prisma/client'
+import { createAuditLog } from '@/lib/audit'
 
 interface FinanceFilters {
     dateFrom?: string
@@ -204,7 +205,7 @@ export async function createTransaction(formData: FormData) {
     }
 
     try {
-        await prisma.transaction.create({
+        const transaction = await prisma.transaction.create({
             data: {
                 amount,
                 description,
@@ -218,6 +219,24 @@ export async function createTransaction(formData: FormData) {
                 currency,
             },
         })
+
+        // Log transaction creation
+        await createAuditLog({
+            eventType: 'TRANSACTION_CREATED',
+            userId: profile.id,
+            userEmail: profile.email,
+            organizationId: profile.organizationId,
+            resourceType: 'Transaction',
+            resourceId: transaction.id,
+            details: {
+                amount: amount.toString(),
+                currency,
+                type,
+                categoryId,
+                description: description || undefined
+            }
+        })
+
         revalidatePath('/dashboard/finance')
         return { success: true }
     } catch (error) {
