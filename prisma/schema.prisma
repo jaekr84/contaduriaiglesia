@@ -41,6 +41,7 @@ model Profile {
   id             String       @id // References auth.users.id
   email          String
   fullName       String?
+  sessionId      String?
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id])
   role           Role         @default(VIEWER)
