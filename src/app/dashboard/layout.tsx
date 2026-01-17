@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { signout } from '@/app/auth/actions'
 import { getCurrentProfile } from '@/lib/auth'
 import Link from 'next/link'
-import { LayoutDashboard, Users, Banknote, Menu, LineChart, PieChart, ShieldCheck as UsersKey } from 'lucide-react'
+import { LayoutDashboard, Users, Banknote, Menu, LineChart, PieChart, ShieldCheck as UsersKey, FileText } from 'lucide-react'
 
 export default async function DashboardLayout({
     children,
@@ -56,6 +56,13 @@ export default async function DashboardLayout({
                     >
                         <PieChart className="h-4 w-4" />
                         Resumen Anual
+                    </Link>
+                    <Link
+                        href="/dashboard/reports"
+                        className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-50"
+                    >
+                        <FileText className="h-4 w-4" />
+                        Reportes
                     </Link>
 
                     {profile.role === 'ADMIN' && (

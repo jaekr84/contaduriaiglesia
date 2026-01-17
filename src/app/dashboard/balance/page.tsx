@@ -62,11 +62,28 @@ export default async function BalancePage() {
                 </div>
             </div>
 
-            {/* Monthly Evolution Chart */}
-            <div>
-                <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-4">Evolución Mensual</h2>
-                <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-                    <BalanceChart data={data.monthlyEvolution} />
+            {/* Monthly Evolution Charts */}
+            <div className="grid gap-8 md:grid-cols-2">
+                {/* ARS Evolution */}
+                <div>
+                    <div className="flex items-center gap-2 mb-4">
+                        <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-500" />
+                        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Evolución ARS</h2>
+                    </div>
+                    <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+                        <BalanceChart data={data.monthlyEvolution} currency="ARS" />
+                    </div>
+                </div>
+
+                {/* USD Evolution */}
+                <div>
+                    <div className="flex items-center gap-2 mb-4">
+                        <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-500" />
+                        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Evolución USD</h2>
+                    </div>
+                    <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+                        <BalanceChart data={data.monthlyEvolution} currency="USD" />
+                    </div>
                 </div>
             </div>
 

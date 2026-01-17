@@ -20,7 +20,14 @@ export function NavigationProgress() {
         const handleClick = (e: MouseEvent) => {
             const target = e.target as HTMLElement
             const link = target.closest('a')
-            if (link && link.href && !link.href.startsWith('#') && !link.target) {
+            if (
+                link &&
+                link.href &&
+                !link.href.startsWith('#') &&
+                !link.href.startsWith('blob:') &&
+                !link.hasAttribute('download') &&
+                !link.target
+            ) {
                 const url = new URL(link.href)
                 if (url.pathname !== pathname) {
                     handleStart()

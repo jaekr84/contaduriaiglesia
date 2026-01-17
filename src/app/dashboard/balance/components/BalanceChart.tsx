@@ -10,6 +10,7 @@ import {
     Title,
     Tooltip,
     Legend,
+    Filler,
     ChartOptions,
 } from 'chart.js'
 
@@ -20,7 +21,8 @@ ChartJS.register(
     LineElement,
     Title,
     Tooltip,
-    Legend
+    Legend,
+    Filler
 )
 
 interface MonthlyData {
@@ -31,25 +33,24 @@ interface MonthlyData {
 
 interface Props {
     data: MonthlyData[]
+    currency: 'ARS' | 'USD'
 }
 
-export function BalanceChart({ data }: Props) {
+export function BalanceChart({ data, currency }: Props) {
+    const isARS = currency === 'ARS'
+    const color = isARS ? 'rgb(59, 130, 246)' : 'rgb(34, 197, 94)'
+    const bgColor = isARS ? 'rgba(59, 130, 246, 0.1)' : 'rgba(34, 197, 94, 0.1)'
+
     const chartData = {
         labels: data.map(d => d.month),
         datasets: [
             {
-                label: 'ARS',
-                data: data.map(d => d.ARS),
-                borderColor: 'rgb(59, 130, 246)',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                label: currency,
+                data: data.map(d => d[currency]),
+                borderColor: color,
+                backgroundColor: bgColor,
                 tension: 0.3,
-            },
-            {
-                label: 'USD',
-                data: data.map(d => d.USD),
-                borderColor: 'rgb(34, 197, 94)',
-                backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                tension: 0.3,
+                fill: true,
             },
         ],
     }
@@ -59,7 +60,7 @@ export function BalanceChart({ data }: Props) {
         maintainAspectRatio: false,
         plugins: {
             legend: {
-                position: 'top' as const,
+                display: false,
             },
             title: {
                 display: false,
@@ -72,9 +73,9 @@ export function BalanceChart({ data }: Props) {
                             label += ': '
                         }
                         if (context.parsed.y !== null) {
-                            label += new Intl.NumberFormat('es-AR', {
+                            label += new Intl.NumberFormat(currency === 'ARS' ? 'es-AR' : 'en-US', {
                                 style: 'currency',
-                                currency: context.dataset.label === 'ARS' ? 'ARS' : 'USD',
+                                currency: currency,
                             }).format(context.parsed.y)
                         }
                         return label
@@ -87,9 +88,9 @@ export function BalanceChart({ data }: Props) {
                 beginAtZero: true,
                 ticks: {
                     callback: function (value) {
-                        return new Intl.NumberFormat('es-AR', {
+                        return new Intl.NumberFormat(currency === 'ARS' ? 'es-AR' : 'en-US', {
                             style: 'currency',
-                            currency: 'ARS',
+                            currency: currency,
                             notation: 'compact',
                         }).format(value as number)
                     }
@@ -99,7 +100,7 @@ export function BalanceChart({ data }: Props) {
     }
 
     return (
-        <div className="h-[400px]">
+        <div className="h-[300px] w-full">
             <Line data={chartData} options={options} />
         </div>
     )
