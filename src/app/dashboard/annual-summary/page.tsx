@@ -5,6 +5,7 @@ import { SummaryKPIs } from './components/SummaryKPIs'
 import { SummaryCharts } from './components/SummaryCharts'
 import { AnnualTable } from './components/AnnualTable'
 import { Metadata } from 'next'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 export const metadata: Metadata = {
     title: 'Resumen Anual | Dashboard',
@@ -16,7 +17,7 @@ interface PageProps {
 }
 
 export default async function AnnualSummaryPage({ searchParams }: PageProps) {
-    const { year } = await searchParams   // Await searchParams as required in Next 15+
+    const { year } = await searchParams
 
     const currentYear = year ? parseInt(year) : new Date().getFullYear()
     const summaryData = await getAnnualSummary(currentYear)
@@ -30,8 +31,13 @@ export default async function AnnualSummaryPage({ searchParams }: PageProps) {
                 </div>
             </div>
 
-            <div className="space-y-4">
-                <div className="space-y-4">
+            <Tabs defaultValue="usd" className="space-y-4">
+                <TabsList className="grid w-full max-w-md grid-cols-2">
+                    <TabsTrigger value="usd">Dólares (USD)</TabsTrigger>
+                    <TabsTrigger value="ars">Pesos (ARS)</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="usd" className="space-y-4">
                     <SummaryKPIs
                         totals={summaryData.usd.totals}
                         currency="USD"
@@ -44,9 +50,9 @@ export default async function AnnualSummaryPage({ searchParams }: PageProps) {
                         year={currentYear}
                         currency="USD"
                     />
+                </TabsContent>
 
-                    <div className="my-8 border-t" />
-
+                <TabsContent value="ars" className="space-y-4">
                     <SummaryKPIs
                         totals={summaryData.ars.totals}
                         currency="ARS"
@@ -59,13 +65,13 @@ export default async function AnnualSummaryPage({ searchParams }: PageProps) {
                         year={currentYear}
                         currency="ARS"
                     />
-                </div>
+                </TabsContent>
+            </Tabs>
 
-                <AnnualTable
-                    monthlyDataARS={summaryData.ars.monthly}
-                    monthlyDataUSD={summaryData.usd.monthly}
-                />
-            </div>
+            <AnnualTable
+                monthlyDataARS={summaryData.ars.monthly}
+                monthlyDataUSD={summaryData.usd.monthly}
+            />
 
             <div className="mt-8 text-center text-sm text-gray-500 print:block hidden">
                 <p>Generado autom&aacute;tica por Sistema de Gesti&oacute;n Iglesia</p>

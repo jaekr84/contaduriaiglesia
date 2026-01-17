@@ -6,6 +6,7 @@ import { updateMember, deleteMember } from '../actions'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { Member } from '@prisma/client'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
 interface Props {
     member: Member
@@ -13,6 +14,7 @@ interface Props {
 
 export function EditMemberDialog({ member }: Props) {
     const [isOpen, setIsOpen] = useState(false)
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [isPending, startTransition] = useTransition()
     const router = useRouter()
 
@@ -26,7 +28,7 @@ export function EditMemberDialog({ member }: Props) {
             if (result?.error) {
                 toast.error(result.error)
             } else {
-                toast.success('Miembro actualizado correctly')
+                toast.success('Miembro actualizado correctamente')
                 setIsOpen(false)
                 router.refresh()
             }
@@ -34,18 +36,14 @@ export function EditMemberDialog({ member }: Props) {
     }
 
     const handleDelete = async () => {
-        if (!confirm('¿Estás seguro de eliminar este miembro?')) return
-
-        startTransition(async () => {
-            const result = await deleteMember(member.id)
-            if (result?.error) {
-                toast.error(result.error)
-            } else {
-                toast.success('Miembro eliminado')
-                setIsOpen(false)
-                router.refresh()
-            }
-        })
+        const result = await deleteMember(member.id)
+        if (result?.error) {
+            toast.error(result.error)
+        } else {
+            toast.success('Miembro eliminado correctamente')
+            setIsOpen(false)
+            router.refresh()
+        }
     }
 
     return (
@@ -142,7 +140,7 @@ export function EditMemberDialog({ member }: Props) {
                             <div className="flex justify-between items-center mt-6">
                                 <button
                                     type="button"
-                                    onClick={handleDelete}
+                                    onClick={() => setShowDeleteConfirm(true)}
                                     disabled={isPending}
                                     className="inline-flex items-center justify-center rounded-md text-sm font-medium text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors h-9 px-4 py-2 dark:hover:bg-red-950/20"
                                 >
@@ -172,6 +170,19 @@ export function EditMemberDialog({ member }: Props) {
                     </div>
                 </div>
             )}
+
+            <ConfirmDialog
+                open={showDeleteConfirm}
+                onOpenChange={setShowDeleteConfirm}
+                title="Eliminar Miembro"
+                description={`¿Estás seguro de que deseas eliminar a ${member.firstName} ${member.lastName}? Esta acción no se puede deshacer.`}
+                confirmText="Eliminar"
+                cancelText="Cancelar"
+                onConfirm={handleDelete}
+                destructive
+                requiresCheckbox
+                checkboxLabel="Entiendo que esta acción es irreversible"
+            />
         </>
     )
 }

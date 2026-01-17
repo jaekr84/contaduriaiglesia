@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card' // Keeping Card for wrapping the table if needed, or just remove
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -10,15 +10,22 @@ import { AnnualReportPDF } from '@/components/reports/AnnualReportPDF'
 import { AnnualSummaryData, getAnnualSummary } from '@/app/dashboard/annual-summary/actions'
 import { FileDown, Loader2, FileText } from 'lucide-react'
 import { formatCurrency } from '@/lib/dateUtils'
+import { toast } from 'sonner'
 
 // Helper component for the download button to isolate PDF generation
 const DownloadReportButton = ({ data, year, title, fileName }: { data: AnnualSummaryData, year: number, title: string, fileName: string }) => {
     const [loading, setLoading] = useState(false)
+    const [progress, setProgress] = useState(0)
 
     const handleDownload = async () => {
         setLoading(true)
+        setProgress(0)
+
         try {
+            setProgress(30)
             const blob = await pdf(<AnnualReportPDF data={data} year={year} title={title} />).toBlob()
+            setProgress(70)
+
             const url = URL.createObjectURL(blob)
             const link = document.createElement('a')
             link.href = url
@@ -27,8 +34,58 @@ const DownloadReportButton = ({ data, year, title, fileName }: { data: AnnualSum
             link.click()
             document.body.removeChild(link)
             URL.revokeObjectURL(url)
+
+            setProgress(100)
+            toast.success('Reporte PDF descargado exitosamente')
         } catch (error) {
             console.error('Error generating PDF:', error)
+            toast.error('Error al generar el reporte PDF')
+        } finally {
+            setLoading(false)
+            setTimeout(() => setProgress(0), 500)
+        }
+    }
+
+    return (
+        <div className="relative">
+            <Button
+                variant="ghost"
+                size="sm"
+                className="gap-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                onClick={handleDownload}
+                disabled={loading}
+            >
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
+                {loading ? 'Generando...' : 'Descargar'}
+            </Button>
+            {loading && progress > 0 && (
+                <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-gray-200 rounded-full overflow-hidden">
+                    <div
+                        className="h-full bg-blue-600 transition-all duration-300 ease-out"
+                        style={{ width: `${progress}%` }}
+                    />
+                </div>
+            )}
+        </div>
+    )
+}
+
+import { generateExcelReport } from '@/components/reports/excelGenerator'
+import * as XLSX from 'xlsx'
+import { FileSpreadsheet } from 'lucide-react'
+
+const DownloadExcelButton = ({ data, year, title, fileName }: { data: AnnualSummaryData, year: number, title: string, fileName: string }) => {
+    const [loading, setLoading] = useState(false)
+
+    const handleDownload = () => {
+        setLoading(true)
+        try {
+            const wb = generateExcelReport(data, year, title)
+            XLSX.writeFile(wb, fileName)
+            toast.success('Reporte Excel descargado exitosamente')
+        } catch (error) {
+            console.error('Error generating Excel:', error)
+            toast.error('Error al generar el reporte Excel')
         } finally {
             setLoading(false)
         }
@@ -38,35 +95,12 @@ const DownloadReportButton = ({ data, year, title, fileName }: { data: AnnualSum
         <Button
             variant="ghost"
             size="sm"
-            className="gap-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+            className="gap-2 text-green-600 hover:text-green-800 hover:bg-green-50"
             onClick={handleDownload}
             disabled={loading}
         >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
-            {loading ? 'Generando...' : 'Descargar'}
-        </Button>
-    )
-}
-
-import { generateExcelReport } from '@/components/reports/excelGenerator'
-import * as XLSX from 'xlsx'
-import { FileSpreadsheet } from 'lucide-react'
-
-const DownloadExcelButton = ({ data, year, title, fileName }: { data: AnnualSummaryData, year: number, title: string, fileName: string }) => {
-    const handleDownload = () => {
-        const wb = generateExcelReport(data, year, title)
-        XLSX.writeFile(wb, fileName)
-    }
-
-    return (
-        <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2 text-green-600 hover:text-green-800 hover:bg-green-50"
-            onClick={handleDownload}
-        >
-            <FileSpreadsheet className="h-4 w-4" />
-            Excel
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSpreadsheet className="h-4 w-4" />}
+            {loading ? 'Generando...' : 'Excel'}
         </Button>
     )
 }

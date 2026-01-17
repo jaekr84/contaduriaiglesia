@@ -119,18 +119,18 @@ export default async function FinancePage(props: Props) {
             </div>
 
             {/* Transactions List */}
-            <div className="rounded-md border border-zinc-200 dark:border-zinc-800">
-                <div className="relative w-full overflow-auto">
+            <div className="rounded-md border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+                <div className="relative w-full overflow-auto max-h-[600px]">
                     <table className="w-full caption-bottom text-sm text-left">
-                        <thead className="[&_tr]:border-b">
-                            <tr className="border-b border-zinc-200 bg-zinc-50/50 hover:bg-zinc-50/50 dark:border-zinc-800 dark:bg-zinc-950/50">
-                                <th className="h-12 px-4 align-middle font-medium text-zinc-500 dark:text-zinc-400">Fecha</th>
-                                <th className="h-12 px-4 align-middle font-medium text-zinc-500 dark:text-zinc-400">Descripción</th>
-                                <th className="h-12 px-4 align-middle font-medium text-zinc-500 dark:text-zinc-400">Categoría</th>
-                                <th className="h-12 px-4 align-middle font-medium text-zinc-500 dark:text-zinc-400">Subcategoría</th>
-                                <th className="h-12 px-4 align-middle font-medium text-zinc-500 dark:text-zinc-400">Miembro</th>
-                                <th className="h-12 px-4 align-middle font-medium text-zinc-500 dark:text-zinc-400">Registrado Por</th>
-                                <th className="h-12 px-4 align-middle font-medium text-zinc-500 dark:text-zinc-400 text-right">Monto</th>
+                        <thead className="sticky top-0 z-10 [&_tr]:border-b">
+                            <tr className="border-b border-zinc-200 bg-zinc-50 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900">
+                                <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300">Fecha</th>
+                                <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300">Descripción</th>
+                                <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300">Categoría</th>
+                                <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300">Subcategoría</th>
+                                <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300">Miembro</th>
+                                <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300">Registrado Por</th>
+                                <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300 text-right">Monto</th>
                             </tr>
                         </thead>
                         <tbody className="[&_tr:last-child]:border-0">
