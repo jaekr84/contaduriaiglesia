@@ -396,6 +396,16 @@ export async function createExchange(formData: FormData) {
     }
 
     try {
+        // Calculate exchange rate for audit log
+        let exchangeRate: number
+        if (currencyOut === 'USD' && currencyIn === 'ARS') {
+            exchangeRate = amountIn / amountOut
+        } else if (currencyOut === 'ARS' && currencyIn === 'USD') {
+            exchangeRate = amountOut / amountIn
+        } else {
+            exchangeRate = amountIn / amountOut
+        }
+
         await prisma.$transaction(async (tx) => {
             const catName = 'Intercambio de Moneda'
 
@@ -457,6 +467,25 @@ export async function createExchange(formData: FormData) {
                     createdById: profile.id,
                 }
             })
+        })
+
+        // Log currency exchange
+        await createAuditLog({
+            eventType: 'TRANSACTION_CREATED',
+            userId: profile.id,
+            userEmail: profile.email,
+            organizationId: profile.organizationId,
+            resourceType: 'Exchange',
+            resourceId: `${currencyOut}-${currencyIn}`,
+            details: {
+                type: 'EXCHANGE',
+                fromAmount: amountOut.toString(),
+                fromCurrency: currencyOut,
+                toAmount: amountIn.toString(),
+                toCurrency: currencyIn,
+                exchangeRate: exchangeRate.toString(),
+                date: date.toISOString()
+            }
         })
 
         revalidatePath('/dashboard/finance')

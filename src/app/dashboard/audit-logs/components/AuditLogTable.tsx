@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { AuditLog } from '@prisma/client'
 import { formatDateTime } from '@/lib/dateUtils'
+import { formatAuditDetails } from '@/lib/auditFormatters'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 
@@ -53,31 +54,29 @@ export function AuditLogTable({ logs, totalCount, totalPages, currentPage }: Pro
 
         // Check if it's a diff (has previous and new keys)
         if (details.previous && details.new) {
+            const formattedChanges = formatAuditDetails(details, log.eventType)
+
             return (
                 <div className="mt-2 space-y-2">
                     <div className="text-sm font-medium">Cambios realizados:</div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="rounded bg-red-50 p-2 dark:bg-red-950">
-                            <div className="text-xs font-medium text-red-700 dark:text-red-300 mb-1">Anterior</div>
-                            <pre className="text-xs text-red-600 dark:text-red-400 whitespace-pre-wrap">
-                                {JSON.stringify(details.previous, null, 2)}
-                            </pre>
-                        </div>
-                        <div className="rounded bg-green-50 p-2 dark:bg-green-950">
-                            <div className="text-xs font-medium text-green-700 dark:text-green-300 mb-1">Nuevo</div>
-                            <pre className="text-xs text-green-600 dark:text-green-400 whitespace-pre-wrap">
-                                {JSON.stringify(details.new, null, 2)}
-                            </pre>
-                        </div>
+                    <div className="rounded bg-blue-50 dark:bg-blue-950 p-3">
+                        <pre className="text-sm text-blue-900 dark:text-blue-100 whitespace-pre-wrap font-sans">
+                            {formattedChanges}
+                        </pre>
                     </div>
                 </div>
             )
         }
 
+        // Format regular details
+        const formattedDetails = formatAuditDetails(details, log.eventType)
+
         return (
-            <pre className="mt-2 text-xs bg-muted p-2 rounded overflow-x-auto">
-                {JSON.stringify(details, null, 2)}
-            </pre>
+            <div className="mt-2 rounded bg-muted p-3">
+                <pre className="text-sm whitespace-pre-wrap font-sans">
+                    {formattedDetails}
+                </pre>
+            </div>
         )
     }
 
