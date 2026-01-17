@@ -148,6 +148,7 @@ model Transaction {
 enum TransactionType {
   INCOME
   EXPENSE
+  OPENING_BALANCE
 }
 
 enum PaymentMethod {

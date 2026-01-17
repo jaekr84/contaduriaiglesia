@@ -91,7 +91,7 @@ export async function getAnnualSummary(year: number): Promise<AnnualSummaryData>
     const openingBalances = await prisma.transaction.findMany({
         where: {
             organizationId: profile.organizationId,
-            type: 'OPENING_BALANCE' as any,
+            type: 'OPENING_BALANCE',
             date: {
                 gte: startDate,
                 lt: endDate
