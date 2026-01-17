@@ -2,14 +2,12 @@
 
 import { requireProfile } from '@/lib/auth'
 import prisma from '@/lib/prisma'
+import { getAppUrl } from '@/lib/utils'
 import { createAdminClient } from '@/lib/supabase/server'
 import { Role } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 import { randomBytes } from 'crypto'
-import { Resend } from 'resend'
 
-// Initialize Resend with API Key from environment variables
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
 export async function getUsers() {
     const profile = await requireProfile()
@@ -83,34 +81,10 @@ export async function inviteUser(email: string, role: Role) {
             }
         })
 
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL ||
-            (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+        const baseUrl = getAppUrl()
         const inviteLink = `${baseUrl}/invite/${token}`
 
-        // Try to send email if Resend is configured
-        if (resend) {
-            try {
-                const { error } = await resend.emails.send({
-                    from: process.env.EMAIL_FROM || 'Iglesia App <onboarding@resend.dev>',
-                    to: email,
-                    subject: 'Invitación a Iglesia App',
-                    html: `
-                        <p>Has sido invitado a unirte a la organización en Iglesia App.</p>
-                        <p>Tu rol asignado es: <strong>${role}</strong></p>
-                        <p>Hacé click en el siguiente enlace para aceptar la invitación:</p>
-                        <a href="${inviteLink}">${inviteLink}</a>
-                    `
-                })
 
-                if (error) {
-                    console.error('Resend error:', error)
-                    // We don't return error here to allow fallback to manual link copying
-                }
-            } catch (emailError) {
-                console.error('Email sending failed:', emailError)
-                // Continue execution to return the link
-            }
-        }
 
         revalidatePath('/dashboard/users')
         return {
@@ -183,3 +157,4 @@ export async function deleteUser(userId: string) {
         return { error: 'Error al eliminar usuario' }
     }
 }
+

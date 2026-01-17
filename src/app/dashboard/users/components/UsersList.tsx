@@ -10,9 +10,10 @@ interface Props {
     profiles: any[]
     invitations: any[]
     currentUserId: string
+    appUrl: string
 }
 
-export function UsersList({ profiles, invitations, currentUserId }: Props) {
+export function UsersList({ profiles, invitations, currentUserId, appUrl }: Props) {
     const [isPending, startTransition] = useTransition()
     const [isInviteModalOpen, setIsInviteModalOpen] = useState(false)
     const [copiedToken, setCopiedToken] = useState<string | null>(null)
@@ -44,6 +45,8 @@ export function UsersList({ profiles, invitations, currentUserId }: Props) {
             else toast.success('Usuario eliminado correctamente')
         })
     }
+
+
 
     const handleInvite = async (e: React.FormEvent<HTMLFormElement>) => {
         try {
@@ -157,7 +160,7 @@ export function UsersList({ profiles, invitations, currentUserId }: Props) {
                             </thead>
                             <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
                                 {invitations.map((inv) => {
-                                    const link = `${window.location.origin}/invite/${inv.token}`
+                                    const link = `${appUrl}/invite/${inv.token}`
                                     return (
                                         <tr key={inv.id} className="transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900/50">
                                             <td className="px-6 py-4 font-medium text-zinc-900 dark:text-zinc-50">
@@ -192,8 +195,9 @@ export function UsersList({ profiles, invitations, currentUserId }: Props) {
                                             <td className="px-6 py-4 text-right">
                                                 <button
                                                     onClick={() => handleRevoke(inv.id)}
-                                                    className="text-zinc-400 hover:text-red-500"
+                                                    className="text-zinc-400 hover:text-red-500 disabled:opacity-30 disabled:hover:text-zinc-400"
                                                     title="Revocar invitación"
+                                                    disabled={isPending}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </button>
@@ -205,89 +209,92 @@ export function UsersList({ profiles, invitations, currentUserId }: Props) {
                         </table>
                     </div>
                 </div>
-            )}
+            )
+            }
 
             {/* Invite Modal */}
-            {isInviteModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                    <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl dark:bg-zinc-950">
-                        <h2 className="mb-4 text-lg font-bold text-zinc-900 dark:text-zinc-50">Invitar Usuario</h2>
+            {
+                isInviteModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                        <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl dark:bg-zinc-950">
+                            <h2 className="mb-4 text-lg font-bold text-zinc-900 dark:text-zinc-50">Invitar Usuario</h2>
 
-                        {!generatedLink ? (
-                            <form onSubmit={handleInvite} className="space-y-4">
-                                <div>
-                                    <label className="mb-2 block text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                                        Email
-                                    </label>
-                                    <input
-                                        name="email"
-                                        type="email"
-                                        required
-                                        placeholder="usuario@ejemplo.com"
-                                        className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 dark:border-zinc-800 dark:bg-zinc-900 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
-                                    />
+                            {!generatedLink ? (
+                                <form onSubmit={handleInvite} className="space-y-4">
+                                    <div>
+                                        <label className="mb-2 block text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                                            Email
+                                        </label>
+                                        <input
+                                            name="email"
+                                            type="email"
+                                            required
+                                            placeholder="usuario@ejemplo.com"
+                                            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 dark:border-zinc-800 dark:bg-zinc-900 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="mb-2 block text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                                            Rol
+                                        </label>
+                                        <select
+                                            name="role"
+                                            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 dark:border-zinc-800 dark:bg-zinc-900 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
+                                        >
+                                            <option value="TREASURER">Tesorero</option>
+                                            <option value="ADMIN">Administrador</option>
+                                            <option value="VIEWER">Visualizador</option>
+                                        </select>
+                                        <p className="mt-1 text-xs text-zinc-500">
+                                            El Tesorero tiene acceso a Finanzas y Miembros, pero no a Usuarios.
+                                        </p>
+                                    </div>
+                                    <div className="flex justify-end gap-3 pt-4">
+                                        <button
+                                            type="button"
+                                            onClick={closeInviteModal}
+                                            className="rounded-md px-4 py-2 text-sm font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50"
+                                        >
+                                            Cancelar
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            disabled={isPending}
+                                            className="inline-flex items-center gap-2 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-50 hover:bg-zinc-900/90 disabled:opacity-50 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-50/90"
+                                        >
+                                            {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                                            Crear Invitación
+                                        </button>
+                                    </div>
+                                </form>
+                            ) : (
+                                <div className="space-y-4">
+                                    <div className="rounded-md bg-green-50 p-4 text-sm text-green-700 dark:bg-green-900/20 dark:text-green-400">
+                                        ¡Invitación creada! Se envió un email al usuario. También podés copiar el link:
+                                    </div>
+                                    <div className="flex items-center gap-2 rounded-md border border-zinc-200 bg-zinc-50 p-2 dark:border-zinc-800 dark:bg-zinc-900">
+                                        <code className="flex-1 overflow-x-auto text-xs">{generatedLink}</code>
+                                        <button
+                                            onClick={() => handleCopy('new', generatedLink)}
+                                            className="rounded-md p-1.5 hover:bg-zinc-200 dark:hover:bg-zinc-800"
+                                        >
+                                            {copiedToken === 'new' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                                        </button>
+                                    </div>
+                                    <div className="flex justify-end pt-2">
+                                        <button
+                                            onClick={closeInviteModal}
+                                            className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-50 hover:bg-zinc-900/90 dark:bg-zinc-50 dark:text-zinc-900"
+                                        >
+                                            Listo
+                                        </button>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label className="mb-2 block text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                                        Rol
-                                    </label>
-                                    <select
-                                        name="role"
-                                        className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 dark:border-zinc-800 dark:bg-zinc-900 dark:focus:border-zinc-50 dark:focus:ring-zinc-50"
-                                    >
-                                        <option value="TREASURER">Tesorero</option>
-                                        <option value="ADMIN">Administrador</option>
-                                        <option value="VIEWER">Visualizador</option>
-                                    </select>
-                                    <p className="mt-1 text-xs text-zinc-500">
-                                        El Tesorero tiene acceso a Finanzas y Miembros, pero no a Usuarios.
-                                    </p>
-                                </div>
-                                <div className="flex justify-end gap-3 pt-4">
-                                    <button
-                                        type="button"
-                                        onClick={closeInviteModal}
-                                        className="rounded-md px-4 py-2 text-sm font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50"
-                                    >
-                                        Cancelar
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        disabled={isPending}
-                                        className="inline-flex items-center gap-2 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-50 hover:bg-zinc-900/90 disabled:opacity-50 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-50/90"
-                                    >
-                                        {isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                                        Crear Invitación
-                                    </button>
-                                </div>
-                            </form>
-                        ) : (
-                            <div className="space-y-4">
-                                <div className="rounded-md bg-green-50 p-4 text-sm text-green-700 dark:bg-green-900/20 dark:text-green-400">
-                                    ¡Invitación creada! Se envió un email al usuario. También podés copiar el link:
-                                </div>
-                                <div className="flex items-center gap-2 rounded-md border border-zinc-200 bg-zinc-50 p-2 dark:border-zinc-800 dark:bg-zinc-900">
-                                    <code className="flex-1 overflow-x-auto text-xs">{generatedLink}</code>
-                                    <button
-                                        onClick={() => handleCopy('new', generatedLink)}
-                                        className="rounded-md p-1.5 hover:bg-zinc-200 dark:hover:bg-zinc-800"
-                                    >
-                                        {copiedToken === 'new' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                                    </button>
-                                </div>
-                                <div className="flex justify-end pt-2">
-                                    <button
-                                        onClick={closeInviteModal}
-                                        className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-50 hover:bg-zinc-900/90 dark:bg-zinc-50 dark:text-zinc-900"
-                                    >
-                                        Listo
-                                    </button>
-                                </div>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     )
 }
