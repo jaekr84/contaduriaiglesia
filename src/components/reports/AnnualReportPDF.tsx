@@ -90,15 +90,39 @@ export function AnnualReportPDF({ data, year, title }: AnnualReportPDFProps) {
 
                 {/* Resumen Ejecutivo */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>1. RESUMEN GLOBAL (ARS / USD)</Text>
+                    <Text style={styles.sectionTitle}>1. RESUMEN GLOBAL</Text>
+
+                    {/* ARS Section */}
+                    <Text style={[styles.subtitle, { marginBottom: 4, marginTop: 4, fontSize: 10 }]}>PESOS ARGENTINOS (ARS)</Text>
                     <View style={styles.statsContainer}>
                         <View style={[styles.statBox, { borderLeft: '4pt solid #10b981' }]}>
-                            <Text style={styles.statLabel}>INGRESOS TOTALES (ARS)</Text>
+                            <Text style={styles.statLabel}>INGRESOS</Text>
                             <Text style={styles.statValuePositive}>{formatMoney(data.ars.totals.income, 'ARS')}</Text>
                         </View>
                         <View style={[styles.statBox, { borderLeft: '4pt solid #ef4444' }]}>
-                            <Text style={styles.statLabel}>GASTOS TOTALES (ARS)</Text>
+                            <Text style={styles.statLabel}>GASTOS</Text>
                             <Text style={styles.statValueNegative}>{formatMoney(data.ars.totals.expense, 'ARS')}</Text>
+                        </View>
+                        <View style={[styles.statBox, { borderLeft: '4pt solid #3b82f6' }]}>
+                            <Text style={styles.statLabel}>BALANCE</Text>
+                            <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#1e293b' }}>{formatMoney(data.ars.totals.balance, 'ARS')}</Text>
+                        </View>
+                    </View>
+
+                    {/* USD Section */}
+                    <Text style={[styles.subtitle, { marginBottom: 4, marginTop: 8, fontSize: 10 }]}>DÓLARES (USD)</Text>
+                    <View style={styles.statsContainer}>
+                        <View style={[styles.statBox, { borderLeft: '4pt solid #10b981' }]}>
+                            <Text style={styles.statLabel}>INGRESOS</Text>
+                            <Text style={styles.statValuePositive}>{formatMoney(data.usd.totals.income, 'USD')}</Text>
+                        </View>
+                        <View style={[styles.statBox, { borderLeft: '4pt solid #ef4444' }]}>
+                            <Text style={styles.statLabel}>GASTOS</Text>
+                            <Text style={styles.statValueNegative}>{formatMoney(data.usd.totals.expense, 'USD')}</Text>
+                        </View>
+                        <View style={[styles.statBox, { borderLeft: '4pt solid #3b82f6' }]}>
+                            <Text style={styles.statLabel}>BALANCE</Text>
+                            <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#1e293b' }}>{formatMoney(data.usd.totals.balance, 'USD')}</Text>
                         </View>
                     </View>
                 </View>
@@ -124,10 +148,16 @@ export function AnnualReportPDF({ data, year, title }: AnnualReportPDFProps) {
                     </View>
                 )}
 
-                {/* Desglose por Categorías */}
+                {/* Desglose por Categorías ARS */}
                 <View style={styles.section} break>
-                    <Text style={styles.sectionTitle}>3. DESGLOSE DE GASTOS POR CATEGORÍA (ARS)</Text>
+                    <Text style={styles.sectionTitle}>3.1. DESGLOSE DE GASTOS POR CATEGORÍA (ARS)</Text>
                     {renderCategoryTable(data.ars.expensesByCategory, 'ARS')}
+                </View>
+
+                {/* Desglose por Categorías USD */}
+                <View style={styles.section} break>
+                    <Text style={styles.sectionTitle}>3.2. DESGLOSE DE GASTOS POR CATEGORÍA (USD)</Text>
+                    {renderCategoryTable(data.usd.expensesByCategory, 'USD')}
                 </View>
 
                 {/* Intercambios de Divisa */}

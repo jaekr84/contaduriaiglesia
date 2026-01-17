@@ -6,7 +6,11 @@ import { createMember } from '../actions'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
-export function CreateMemberDialog() {
+interface Props {
+    trigger?: React.ReactNode
+}
+
+export function CreateMemberDialog({ trigger }: Props) {
     const [isOpen, setIsOpen] = useState(false)
     const [isPending, startTransition] = useTransition()
     const router = useRouter()
@@ -30,13 +34,17 @@ export function CreateMemberDialog() {
 
     return (
         <>
-            <button
-                onClick={() => setIsOpen(true)}
-                className="inline-flex items-center justify-center gap-2 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-50 shadow hover:bg-zinc-900/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-50/90"
-            >
-                <Plus className="h-4 w-4" />
-                Nuevo Miembro
-            </button>
+            {trigger ? (
+                <div onClick={() => setIsOpen(true)}>{trigger}</div>
+            ) : (
+                <button
+                    onClick={() => setIsOpen(true)}
+                    className="inline-flex items-center justify-center gap-2 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-50 shadow hover:bg-zinc-900/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-50/90"
+                >
+                    <Plus className="h-4 w-4" />
+                    Nuevo Miembro
+                </button>
+            )}
 
             {isOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200">

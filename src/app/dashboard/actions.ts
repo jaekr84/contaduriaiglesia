@@ -35,7 +35,8 @@ export async function getDashboardData(year?: number, month?: number) {
                 date: {
                     gte: firstDay,
                     lte: lastDay,
-                }
+                },
+                cancelledAt: null
             },
             include: {
                 category: {
@@ -58,7 +59,8 @@ export async function getDashboardData(year?: number, month?: number) {
                 date: {
                     gte: firstDay,
                     lte: lastDay,
-                }
+                },
+                cancelledAt: null
             },
             include: {
                 category: true,
@@ -78,7 +80,8 @@ export async function getDashboardData(year?: number, month?: number) {
                 date: {
                     gte: firstDay,
                     lte: lastDay,
-                }
+                },
+                cancelledAt: null
             },
             _sum: { amount: true }
         }),
@@ -95,7 +98,8 @@ export async function getDashboardData(year?: number, month?: number) {
                 date: {
                     gte: firstDay,
                     lte: lastDay,
-                }
+                },
+                cancelledAt: null
             },
             _sum: { amount: true }
         })

@@ -5,7 +5,7 @@ export const styles = StyleSheet.create({
         flexDirection: 'column',
         backgroundColor: '#FFFFFF',
         padding: 30,
-        fontFamily: 'Noto Sans KR',
+        fontFamily: 'Inter',
     },
     header: {
         marginBottom: 20,

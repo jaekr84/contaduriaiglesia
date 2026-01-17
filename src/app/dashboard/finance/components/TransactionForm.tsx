@@ -7,6 +7,8 @@ import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { Category, Member } from '@prisma/client'
 import { MoneyInput } from './MoneyInput'
+import { CreateCategoryDialog } from './CreateCategoryDialog'
+import { CreateMemberDialog } from '../../members/components/CreateMemberDialog'
 
 interface TransactionFormProps {
     categories: Category[]
@@ -23,10 +25,12 @@ export function TransactionForm({ categories, members, onSuccess, onCancel, isMo
     const [selectedSubId, setSelectedSubId] = useState('')
     const router = useRouter()
     const [currency, setCurrency] = useState('ARS')
+    const [resetKey, setResetKey] = useState(0)
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
-        const formData = new FormData(event.currentTarget)
+        const form = event.currentTarget
+        const formData = new FormData(form)
         // Ensure manual fields are set if needed, though they should be in the form
         formData.set('currency', currency)
 
@@ -54,9 +58,10 @@ export function TransactionForm({ categories, members, onSuccess, onCancel, isMo
                 // We need to reset the form inputs. 
                 // Since we are using uncontrolled inputs for most, we might need a ref or just let the page refresh handle it.
                 // But router.refresh() doesn't reset client state inputs.
-                event.currentTarget.reset()
+                form.reset()
                 // Reset defaults
                 setCurrency('ARS')
+                setResetKey(prev => prev + 1)
                 // Keep the date as "today" (default) or whatever the input resets to.
 
                 router.refresh()
@@ -106,7 +111,17 @@ export function TransactionForm({ categories, members, onSuccess, onCancel, isMo
 
                     {/* Category */}
                     <div className="w-full lg:w-40 space-y-1">
-                        <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Categoría</label>
+                        <div className="flex items-center gap-2">
+                            <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Categoría</label>
+                            <CreateCategoryDialog
+                                categories={categories}
+                                trigger={
+                                    <button type="button" className="text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full p-0.5 transition-colors" title="Nueva Categoría">
+                                        <Plus className="h-3 w-3" />
+                                    </button>
+                                }
+                            />
+                        </div>
                         <select
                             required
                             value={selectedParentId}
@@ -127,7 +142,23 @@ export function TransactionForm({ categories, members, onSuccess, onCancel, isMo
 
                     {/* Subcategory */}
                     <div className="w-full lg:w-40 space-y-1">
-                        <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Subcategoría</label>
+                        <div className="flex items-center gap-2">
+                            <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Subcategoría</label>
+                            <CreateCategoryDialog
+                                categories={categories}
+                                fixedParentId={selectedParentId}
+                                trigger={
+                                    <button
+                                        type="button"
+                                        disabled={!selectedParentId}
+                                        className="text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full p-0.5 transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+                                        title={selectedParentId ? "Nueva Subcategoría" : "Seleccione una categoría primero"}
+                                    >
+                                        <Plus className="h-3 w-3" />
+                                    </button>
+                                }
+                            />
+                        </div>
                         <select
                             value={selectedSubId}
                             onChange={(e) => setSelectedSubId(e.target.value)}
@@ -160,6 +191,7 @@ export function TransactionForm({ categories, members, onSuccess, onCancel, isMo
                         <div className="relative">
                             <span className="absolute left-2.5 top-2 text-zinc-500 text-sm">$</span>
                             <MoneyInput
+                                key={resetKey}
                                 name="amount"
                                 required
                                 placeholder="0,00"
@@ -180,7 +212,21 @@ export function TransactionForm({ categories, members, onSuccess, onCancel, isMo
 
                     {/* Member */}
                     <div className="w-full lg:w-40 space-y-1">
-                        <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Miembro</label>
+                        <div className="flex items-center gap-2">
+                            <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Miembro</label>
+                            <CreateMemberDialog
+                                trigger={
+                                    <button
+                                        type="button"
+                                        disabled={type !== 'INCOME'}
+                                        className="text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full p-0.5 transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+                                        title="Nuevo Miembro"
+                                    >
+                                        <Plus className="h-3 w-3" />
+                                    </button>
+                                }
+                            />
+                        </div>
                         <select
                             name="memberId"
                             disabled={type !== 'INCOME'}

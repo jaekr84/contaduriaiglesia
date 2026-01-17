@@ -19,7 +19,8 @@ export async function getFinancialStatement(year?: number) {
         by: ['currency', 'type'],
         where: {
             organizationId: profile.organizationId,
-            date: { lt: windowStart }
+            date: { lt: windowStart },
+            cancelledAt: null
         },
         _sum: { amount: true }
     })
@@ -38,7 +39,8 @@ export async function getFinancialStatement(year?: number) {
     const windowTransactions = await prisma.transaction.findMany({
         where: {
             organizationId: profile.organizationId,
-            date: { gte: windowStart }
+            date: { gte: windowStart },
+            cancelledAt: null
         },
         orderBy: { date: 'asc' },
         select: {
@@ -111,7 +113,8 @@ export async function getFinancialStatement(year?: number) {
             date: {
                 gte: yearStart,
                 lte: yearEnd,
-            }
+            },
+            cancelledAt: null
         },
         _sum: { amount: true }
     })

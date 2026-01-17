@@ -3,10 +3,12 @@
 import { useState } from 'react'
 import { formatDateTime } from '@/lib/utils'
 import { formatCurrency } from '@/lib/dateUtils'
-import { X } from 'lucide-react'
+import { X, Plus } from 'lucide-react'
 import { CancelTransactionDialog } from './CancelTransactionDialog'
 import { QuickTransactionRow } from './QuickTransactionRow'
 import { Category, Member } from '@prisma/client'
+import { CreateCategoryDialog } from './CreateCategoryDialog'
+import { CreateMemberDialog } from '../../members/components/CreateMemberDialog'
 
 interface Transaction {
     id: string
@@ -50,27 +52,27 @@ export function TransactionsTable({ transactions, userRole, categories, members 
                         <thead className="sticky top-0 z-10 [&_tr]:border-b">
                             <tr className="border-b border-zinc-200 bg-zinc-50 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900">
                                 <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300">Fecha</th>
-                                <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300">Descripción</th>
+                                <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300">Tipo</th>
                                 <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300">Categoría</th>
                                 <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300">Subcategoría</th>
+                                <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300 text-right">Monto</th>
+                                <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300">Descripción</th>
                                 <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300">Miembro</th>
                                 <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300">Registrado Por</th>
-                                <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300 text-right">Monto</th>
                                 {canCancel && (
                                     <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300 text-center">Acciones</th>
                                 )}
                             </tr>
-                        </thead>
-                        <tbody className="[&_tr:last-child]:border-0">
-                            {/* Quick Entry Row */}
                             <QuickTransactionRow
                                 categories={categories}
                                 members={members}
                                 userRole={userRole}
                             />
+                        </thead>
+                        <tbody className="[&_tr:last-child]:border-0">
                             {transactions.length === 0 ? (
                                 <tr>
-                                    <td colSpan={canCancel ? 8 : 7} className="p-8 text-center text-zinc-500">
+                                    <td colSpan={canCancel ? 9 : 8} className="p-8 text-center text-zinc-500">
                                         No hay movimientos registrados este mes.
                                     </td>
                                 </tr>
@@ -86,26 +88,34 @@ export function TransactionsTable({ transactions, userRole, categories, members 
                                         <td className="p-4 align-middle text-zinc-600 dark:text-zinc-400">
                                             {formatDateTime(t.date)}
                                         </td>
-                                        <td className="p-4 align-middle font-medium text-zinc-900 dark:text-zinc-50">
-                                            {t.description || '-'}
+                                        <td className="p-4 align-middle">
+                                            <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium rings-1 ring-inset ${t.type === 'INCOME'
+                                                ? 'bg-green-50 text-green-700 ring-green-600/20 dark:bg-green-900/20 dark:text-green-400 dark:ring-green-500/20'
+                                                : 'bg-red-50 text-red-700 ring-red-600/20 dark:bg-red-900/20 dark:text-red-400 dark:ring-red-500/20'
+                                                }`}>
+                                                {t.type === 'INCOME' ? 'Ingreso' : 'Gasto'}
+                                            </span>
                                         </td>
                                         <td className="p-4 align-middle text-zinc-600 dark:text-zinc-400">
                                             {t.category.parent ? t.category.parent.name : t.category.name}
                                         </td>
                                         <td className="p-4 align-middle">
-                                            <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-zinc-100 text-zinc-900 hover:bg-zinc-100/80 dark:bg-zinc-800 dark:text-zinc-50">
+                                            <span className="text-zinc-600 dark:text-zinc-400 text-sm">
                                                 {t.category.parent ? t.category.name : '-'}
                                             </span>
+                                        </td>
+                                        <td className={`p-4 align-middle text-right font-bold ${t.type === 'INCOME' ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
+                                            }`}>
+                                            {t.type === 'INCOME' ? '+' : '-'}{formatCurrency(Number(t.amount), t.currency as 'ARS' | 'USD')}
+                                        </td>
+                                        <td className="p-4 align-middle font-medium text-zinc-900 dark:text-zinc-50">
+                                            {t.description || '-'}
                                         </td>
                                         <td className="p-4 align-middle text-zinc-600 dark:text-zinc-400">
                                             {t.member ? `${t.member.firstName} ${t.member.lastName}` : '-'}
                                         </td>
                                         <td className="p-4 align-middle text-zinc-600 dark:text-zinc-400">
                                             {t.createdBy?.fullName || t.createdBy?.email || '-'}
-                                        </td>
-                                        <td className={`p-4 align-middle text-right font-bold ${t.type === 'INCOME' ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
-                                            }`}>
-                                            {t.type === 'INCOME' ? '+' : '-'}{formatCurrency(Number(t.amount), t.currency as 'ARS' | 'USD')}
                                         </td>
                                         {canCancel && (
                                             <td className="p-4 align-middle text-center">

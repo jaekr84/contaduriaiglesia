@@ -207,11 +207,14 @@ export default function ReportsPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="w-[200px]">Periodo</TableHead>
-                                    <TableHead>Ingresos (ARS)</TableHead>
-                                    <TableHead>Gastos (ARS)</TableHead>
-                                    <TableHead>Balance (ARS)</TableHead>
-                                    <TableHead className="text-right">Acciones</TableHead>
+                                    <TableHead className="w-[150px]">Periodo</TableHead>
+                                    <TableHead className="text-right">Ingresos (ARS)</TableHead>
+                                    <TableHead className="text-right">Gastos (ARS)</TableHead>
+                                    <TableHead className="text-right font-bold border-r">Balance (ARS)</TableHead>
+                                    <TableHead className="text-right">Ingresos (USD)</TableHead>
+                                    <TableHead className="text-right">Gastos (USD)</TableHead>
+                                    <TableHead className="text-right font-bold">Balance (USD)</TableHead>
+                                    <TableHead className="text-right w-[180px]">Acciones</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -225,14 +228,24 @@ export default function ReportsPage() {
                                                     {monthName}
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="text-green-600 dark:text-green-400">
+                                            <TableCell className="text-right text-green-600 dark:text-green-400">
                                                 {formatCurrency(mData?.income || 0, 'ARS')}
                                             </TableCell>
-                                            <TableCell className="text-red-600 dark:text-red-400">
+                                            <TableCell className="text-right text-red-600 dark:text-red-400">
                                                 {formatCurrency(mData?.expense || 0, 'ARS')}
                                             </TableCell>
-                                            <TableCell className="font-semibold">
+                                            <TableCell className="text-right font-semibold border-r">
                                                 {formatCurrency(mData?.balance || 0, 'ARS')}
+                                            </TableCell>
+
+                                            <TableCell className="text-right text-green-600 dark:text-green-400">
+                                                {formatCurrency(reportData.usd.monthly[index]?.income || 0, 'USD')}
+                                            </TableCell>
+                                            <TableCell className="text-right text-red-600 dark:text-red-400">
+                                                {formatCurrency(reportData.usd.monthly[index]?.expense || 0, 'USD')}
+                                            </TableCell>
+                                            <TableCell className="text-right font-semibold">
+                                                {formatCurrency(reportData.usd.monthly[index]?.balance || 0, 'USD')}
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <div className="flex justify-end gap-2">
@@ -257,14 +270,24 @@ export default function ReportsPage() {
                                 {reportData && (
                                     <TableRow className="bg-muted/50 font-medium">
                                         <TableCell className="font-bold">Resumen Anual {year}</TableCell>
-                                        <TableCell className="text-green-700 dark:text-green-300 font-bold">
+                                        <TableCell className="text-right text-green-700 dark:text-green-300 font-bold">
                                             {formatCurrency(reportData.ars.totals.income, 'ARS')}
                                         </TableCell>
-                                        <TableCell className="text-red-700 dark:text-red-300 font-bold">
+                                        <TableCell className="text-right text-red-700 dark:text-red-300 font-bold">
                                             {formatCurrency(reportData.ars.totals.expense, 'ARS')}
                                         </TableCell>
-                                        <TableCell className="font-bold">
+                                        <TableCell className="text-right font-bold border-r">
                                             {formatCurrency(reportData.ars.totals.balance, 'ARS')}
+                                        </TableCell>
+
+                                        <TableCell className="text-right text-green-700 dark:text-green-300 font-bold">
+                                            {formatCurrency(reportData.usd.totals.income, 'USD')}
+                                        </TableCell>
+                                        <TableCell className="text-right text-red-700 dark:text-red-300 font-bold">
+                                            {formatCurrency(reportData.usd.totals.expense, 'USD')}
+                                        </TableCell>
+                                        <TableCell className="text-right font-bold">
+                                            {formatCurrency(reportData.usd.totals.balance, 'USD')}
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex justify-end gap-2">

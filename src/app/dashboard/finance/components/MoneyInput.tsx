@@ -6,27 +6,16 @@ interface MoneyInputProps {
     value?: string
     onChange?: (value: string) => void
     name?: string
+    form?: string
     placeholder?: string
     required?: boolean
     className?: string
     disabled?: boolean
+    onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>
 }
 
-export function MoneyInput({ value, onChange, name, placeholder, required, className, disabled }: MoneyInputProps) {
+export function MoneyInput({ value, onChange, name, form, placeholder, required, className, disabled, onKeyDown }: MoneyInputProps) {
     const [displayValue, setDisplayValue] = useState('')
-
-    // Format number to "1.234,56" or similar
-    const format = (val: string) => {
-        if (!val) return ''
-        // Remove non-numeric chars except dot/comma
-        const clean = val.replace(/[^\d.,]/g, '')
-        // Just return as is for now, but really we want to ensure visual "dots" for thousands
-        // A simple trick: use Intl.NumberFormat to formatting on blur, but valid input on focus?
-        // Let's use a simpler heuristic for Argentina: 
-        // 1234 -> 1.234
-        // 1234.56 -> 1.234,56
-        return clean
-    }
 
     // Sync from parent
     useEffect(() => {
@@ -114,8 +103,10 @@ export function MoneyInput({ value, onChange, name, placeholder, required, class
             <input
                 type="text"
                 inputMode="decimal"
+                form={form}
                 value={displayValue}
                 onChange={handleChange}
+                onKeyDown={onKeyDown}
                 onBlur={handleBlur}
                 placeholder={placeholder}
                 required={required}
@@ -127,6 +118,7 @@ export function MoneyInput({ value, onChange, name, placeholder, required, class
                 <input
                     type="hidden"
                     name={name}
+                    form={form}
                     value={displayValue ? displayValue.replace(/\./g, '').replace(',', '.') : ''}
                 />
             )}

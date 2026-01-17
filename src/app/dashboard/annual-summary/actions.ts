@@ -74,7 +74,8 @@ export async function getAnnualSummary(year: number): Promise<AnnualSummaryData>
             date: {
                 gte: startDate,
                 lt: endDate
-            }
+            },
+            cancelledAt: null
         },
         include: {
             category: {
@@ -95,7 +96,8 @@ export async function getAnnualSummary(year: number): Promise<AnnualSummaryData>
             date: {
                 gte: startDate,
                 lt: endDate
-            }
+            },
+            cancelledAt: null
         }
     })
 
@@ -334,7 +336,8 @@ export async function getAnnualCategoryBreakdown(year: number, type: 'INCOME' | 
             date: {
                 gte: startDate,
                 lt: endDate
-            }
+            },
+            cancelledAt: null
         },
         include: {
             category: {
