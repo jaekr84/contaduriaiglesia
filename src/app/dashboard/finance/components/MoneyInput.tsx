@@ -19,10 +19,21 @@ export function MoneyInput({ value, onChange, name, form, placeholder, required,
 
     // Sync from parent
     useEffect(() => {
-        if (value) {
-            setDisplayValue(value)
-        } else if (value === '') {
-            setDisplayValue('')
+        if (value !== undefined) {
+            // Format existing normalized value (e.g. "1000" -> "1.000")
+            const parts = value.split('.')
+            const integerPart = parts[0]
+            const decimalPart = parts[1]
+
+            // Format integer part with dots
+            const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+
+            // Reconstruct with comma for decimal
+            const formatted = decimalPart !== undefined
+                ? `${formattedInteger},${decimalPart}`
+                : formattedInteger
+
+            setDisplayValue(formatted)
         }
     }, [value])
 
