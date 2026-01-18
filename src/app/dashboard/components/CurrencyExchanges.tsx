@@ -1,7 +1,6 @@
 'use client'
 
-import { useState } from 'react'
-import { ChevronDown, ChevronRight, ArrowRightLeft } from 'lucide-react'
+import { ArrowRightLeft } from 'lucide-react'
 
 interface CurrencyExchange {
     id: string
@@ -18,7 +17,6 @@ interface Props {
 }
 
 export function CurrencyExchanges({ currencyExchanges }: Props) {
-    const [isExpanded, setIsExpanded] = useState(false)
 
     const formatCurrency = (amount: number, currency: string) => {
         return new Intl.NumberFormat('es-AR', {
@@ -65,16 +63,6 @@ export function CurrencyExchanges({ currencyExchanges }: Props) {
                         <tr className="group border-b border-zinc-200 dark:border-zinc-800">
                             <td className="px-4 py-3">
                                 <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={() => setIsExpanded(!isExpanded)}
-                                        className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-50 transition-colors"
-                                    >
-                                        {isExpanded ? (
-                                            <ChevronDown className="h-4 w-4" />
-                                        ) : (
-                                            <ChevronRight className="h-4 w-4" />
-                                        )}
-                                    </button>
                                     <ArrowRightLeft className="h-4 w-4 text-zinc-400" />
                                     <span className="font-medium text-zinc-900 dark:text-zinc-50">
                                         Cambio de Moneda ({currencyExchanges.length} movimientos)
@@ -92,7 +80,7 @@ export function CurrencyExchanges({ currencyExchanges }: Props) {
                             </td>
                         </tr>
                         {/* Exchange Detail Rows */}
-                        {isExpanded && currencyExchanges.map((exchange) => (
+                        {currencyExchanges.map((exchange) => (
                             <tr key={exchange.id} className="bg-zinc-50 dark:bg-zinc-900/30">
                                 <td className="px-4 py-2 pl-12">
                                     <div className="flex items-center gap-2 text-sm">

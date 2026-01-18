@@ -1,7 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
-import { ChevronDown, ChevronRight } from 'lucide-react'
+import React from 'react'
 
 interface ExpenseCategory {
     category: {
@@ -23,17 +22,6 @@ interface Props {
 }
 
 export function ExpensesByCategory({ expensesByCategory }: Props) {
-    const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
-
-    const toggleCategory = (categoryId: string) => {
-        const newExpanded = new Set(expandedCategories)
-        if (newExpanded.has(categoryId)) {
-            newExpanded.delete(categoryId)
-        } else {
-            newExpanded.add(categoryId)
-        }
-        setExpandedCategories(newExpanded)
-    }
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('es-AR', {
@@ -46,14 +34,14 @@ export function ExpensesByCategory({ expensesByCategory }: Props) {
 
     if (expensesByCategory.length === 0) {
         return (
-            <div className="rounded-lg border border-zinc-200 bg-white p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+            <div className="rounded-lg border border-red-200 bg-red-50 p-8 shadow-sm dark:border-red-900/50 dark:bg-red-950/20">
                 <p className="text-center text-zinc-500">No hay gastos registrados en este período.</p>
             </div>
         )
     }
 
     return (
-        <div className="rounded-lg border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+        <div className="rounded-lg border border-red-200 bg-red-50 shadow-sm dark:border-red-900/50 dark:bg-red-950/20">
             <div className="overflow-x-auto">
                 <table className="w-full">
                     <thead className="border-b border-zinc-200 dark:border-zinc-800">
@@ -69,7 +57,6 @@ export function ExpensesByCategory({ expensesByCategory }: Props) {
                     <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
                         {expensesByCategory.map((item) => {
                             const hasSubcategories = Object.keys(item.subcategories).length > 0
-                            const isExpanded = expandedCategories.has(item.category.id)
 
                             return (
                                 <React.Fragment key={item.category.id}>
@@ -77,20 +64,7 @@ export function ExpensesByCategory({ expensesByCategory }: Props) {
                                     <tr className="group">
                                         <td className="px-4 py-3">
                                             <div className="flex items-center gap-2">
-                                                {hasSubcategories ? (
-                                                    <button
-                                                        onClick={() => toggleCategory(item.category.id)}
-                                                        className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-50 transition-colors"
-                                                    >
-                                                        {isExpanded ? (
-                                                            <ChevronDown className="h-4 w-4" />
-                                                        ) : (
-                                                            <ChevronRight className="h-4 w-4" />
-                                                        )}
-                                                    </button>
-                                                ) : (
-                                                    <div className="w-4" />
-                                                )}
+                                                <div className="w-4" />
                                                 <span className="font-medium text-zinc-900 dark:text-zinc-50">
                                                     {item.category.name}
                                                 </span>
@@ -101,7 +75,7 @@ export function ExpensesByCategory({ expensesByCategory }: Props) {
                                         </td>
                                     </tr>
                                     {/* Subcategory Rows */}
-                                    {isExpanded && hasSubcategories && Object.values(item.subcategories).map((sub) => (
+                                    {hasSubcategories && Object.values(item.subcategories).map((sub) => (
                                         <tr key={sub.category.id} className="bg-zinc-50 dark:bg-zinc-900/30">
                                             <td className="px-4 py-2 pl-12">
                                                 <span className="text-sm text-zinc-600 dark:text-zinc-400">
