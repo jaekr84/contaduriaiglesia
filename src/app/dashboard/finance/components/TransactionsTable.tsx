@@ -5,7 +5,7 @@ import { formatDateTime } from '@/lib/utils'
 import { formatCurrency } from '@/lib/dateUtils'
 import { X, Plus } from 'lucide-react'
 import { CancelTransactionDialog } from './CancelTransactionDialog'
-import { QuickTransactionRow } from './QuickTransactionRow'
+
 import { Category, Member } from '@prisma/client'
 import { CreateCategoryDialog } from './CreateCategoryDialog'
 import { CreateMemberDialog } from '../../members/components/CreateMemberDialog'
@@ -36,10 +36,10 @@ interface Props {
     transactions: Transaction[]
     userRole: string
     categories: Category[]
-    members: Member[]
+
 }
 
-export function TransactionsTable({ transactions, userRole, categories, members }: Props) {
+export function TransactionsTable({ transactions, userRole, categories }: Props) {
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
 
     const canCancel = userRole === 'ADMIN' || userRole === 'TREASURER'
@@ -57,22 +57,18 @@ export function TransactionsTable({ transactions, userRole, categories, members 
                                 <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300">Subcategoría</th>
                                 <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300 text-right">Monto</th>
                                 <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300">Descripción</th>
-                                <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300">Miembro</th>
+
                                 <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300">Registrado Por</th>
                                 {canCancel && (
                                     <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300 text-center">Acciones</th>
                                 )}
                             </tr>
-                            <QuickTransactionRow
-                                categories={categories}
-                                members={members}
-                                userRole={userRole}
-                            />
+
                         </thead>
                         <tbody className="[&_tr:last-child]:border-0">
                             {transactions.length === 0 ? (
                                 <tr>
-                                    <td colSpan={canCancel ? 9 : 8} className="p-8 text-center text-zinc-500">
+                                    <td colSpan={canCancel ? 8 : 7} className="p-8 text-center text-zinc-500">
                                         No hay movimientos registrados este mes.
                                     </td>
                                 </tr>
@@ -111,9 +107,7 @@ export function TransactionsTable({ transactions, userRole, categories, members 
                                         <td className="p-4 align-middle font-medium text-zinc-900 dark:text-zinc-50">
                                             {t.description || '-'}
                                         </td>
-                                        <td className="p-4 align-middle text-zinc-600 dark:text-zinc-400">
-                                            {t.member ? `${t.member.firstName} ${t.member.lastName}` : '-'}
-                                        </td>
+
                                         <td className="p-4 align-middle text-zinc-600 dark:text-zinc-400">
                                             {t.createdBy?.fullName || t.createdBy?.email || '-'}
                                         </td>

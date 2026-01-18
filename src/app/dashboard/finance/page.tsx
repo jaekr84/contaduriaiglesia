@@ -11,6 +11,8 @@ import { requireProfile } from '@/lib/auth'
 import Link from 'next/link'
 
 import { FinanceFilters } from './components/FinanceFilters'
+import { QuickIncomeForm } from './components/QuickIncomeForm'
+import { QuickExpenseForm } from './components/QuickExpenseForm'
 
 interface Props {
     searchParams: Promise<{
@@ -124,7 +126,15 @@ export default async function FinancePage(props: Props) {
 
             {/* New Transaction Card */}
             <NewExchangeCard />
-            <NewTransactionCard categories={categories} members={members} />
+
+            {/* Quick Entry Forms */}
+            <div className="grid gap-6 md:grid-cols-2">
+                <QuickIncomeForm categories={categories} userRole={profile.role} />
+                <QuickExpenseForm categories={categories} userRole={profile.role} />
+            </div>
+
+
+            {/* <NewTransactionCard categories={categories} members={members} /> */}
 
             <FinanceFilters categories={categories} members={members} />
 
@@ -136,8 +146,8 @@ export default async function FinancePage(props: Props) {
                 }))}
                 userRole={profile.role}
                 categories={categories}
-                members={members}
             />
         </div>
     )
 }
+

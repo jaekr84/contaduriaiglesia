@@ -1,6 +1,4 @@
-'use client'
-
-import { useState, useEffect } from 'react'
+import { useState, useEffect, forwardRef, useImperativeHandle, useRef } from 'react'
 
 interface MoneyInputProps {
     value?: string
@@ -14,8 +12,11 @@ interface MoneyInputProps {
     onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>
 }
 
-export function MoneyInput({ value, onChange, name, form, placeholder, required, className, disabled, onKeyDown }: MoneyInputProps) {
+export const MoneyInput = forwardRef<HTMLInputElement, MoneyInputProps>(({ value, onChange, name, form, placeholder, required, className, disabled, onKeyDown }, ref) => {
     const [displayValue, setDisplayValue] = useState('')
+    const inputRef = useRef<HTMLInputElement>(null)
+
+    useImperativeHandle(ref, () => inputRef.current as HTMLInputElement)
 
     // Sync from parent
     useEffect(() => {
@@ -112,6 +113,7 @@ export function MoneyInput({ value, onChange, name, form, placeholder, required,
     return (
         <>
             <input
+                ref={inputRef}
                 type="text"
                 inputMode="decimal"
                 form={form}
@@ -135,4 +137,6 @@ export function MoneyInput({ value, onChange, name, form, placeholder, required,
             )}
         </>
     )
-}
+})
+
+MoneyInput.displayName = 'MoneyInput'

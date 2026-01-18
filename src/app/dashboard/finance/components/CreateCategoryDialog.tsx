@@ -12,9 +12,10 @@ interface Props {
     trigger?: React.ReactNode
     defaultIsSubcategory?: boolean
     fixedParentId?: string
+    type?: 'INCOME' | 'EXPENSE'
 }
 
-export function CreateCategoryDialog({ categories, trigger, defaultIsSubcategory = false, fixedParentId }: Props) {
+export function CreateCategoryDialog({ categories, trigger, defaultIsSubcategory = false, fixedParentId, type }: Props) {
     const [isOpen, setIsOpen] = useState(false)
     const [isPending, startTransition] = useTransition()
     const router = useRouter()
@@ -85,12 +86,13 @@ export function CreateCategoryDialog({ categories, trigger, defaultIsSubcategory
                                 <div className="space-y-2">
                                     <label htmlFor="type" className="text-sm font-medium text-zinc-900 dark:text-zinc-50">Tipo</label>
                                     {fixedParent && <input type="hidden" name="type" value={fixedParent.type} />}
+                                    {type && !fixedParent && <input type="hidden" name="type" value={type} />}
                                     <select
                                         id="type"
-                                        name={fixedParent ? undefined : "type"}
+                                        name={fixedParent || type ? undefined : "type"}
                                         required
-                                        value={fixedParent ? fixedParent.type : undefined}
-                                        disabled={!!fixedParent}
+                                        value={fixedParent ? fixedParent.type : (type || undefined)}
+                                        disabled={!!fixedParent || !!type}
                                         className="flex h-9 w-full rounded-md border border-zinc-200 bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:focus-visible:ring-zinc-300"
                                     >
                                         <option value="EXPENSE">Gasto</option>
