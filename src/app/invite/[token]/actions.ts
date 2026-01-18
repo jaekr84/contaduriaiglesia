@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { createAuditLog } from '@/lib/audit'
 
 export async function getInvitation(token: string) {
     const invitation = await prisma.invitation.findUnique({
@@ -81,10 +82,29 @@ export async function acceptInvitation(token: string, formData: FormData) {
             password
         })
 
+
         if (signInError) {
             console.error('Error signing in after creation:', signInError)
             return { error: 'Usuario creado pero error al iniciar sesión. Intente loguearse manualmente.' }
         }
+
+        // Log Invitation Accepted
+        await createAuditLog({
+            eventType: 'INVITATION_ACCEPTED',
+            userId: userData.user!.id,
+            userEmail: invitation.email,
+            organizationId: invitation.organizationId,
+            details: { role: invitation.role }
+        })
+
+        // Log First Login
+        await createAuditLog({
+            eventType: 'LOGIN_SUCCESS',
+            userId: userData.user!.id,
+            userEmail: invitation.email,
+            organizationId: invitation.organizationId,
+            details: { method: 'auto-login-after-invite' }
+        })
 
     } catch (dbError) {
         console.error(dbError)

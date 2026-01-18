@@ -14,7 +14,17 @@ interface PageProps {
     searchParams: Promise<{ year?: string; month?: string }>
 }
 
+import { getCurrentProfile } from '@/lib/auth'
+import { redirect } from 'next/navigation'
+
 export default async function AnnualSummaryPage({ searchParams }: PageProps) {
+    const profile = await getCurrentProfile()
+
+    // Allowed: ADMIN, TREASURER, VIEWER
+    if (!profile || !['ADMIN', 'TREASURER', 'VIEWER'].includes(profile.role)) {
+        redirect('/dashboard')
+    }
+
     const { year, month } = await searchParams
 
     const currentYear = year ? parseInt(year) : new Date().getFullYear()

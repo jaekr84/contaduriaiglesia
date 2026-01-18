@@ -1,6 +1,6 @@
 import { getFinanceSummary, getTransactions, getCategories } from './actions'
+import { redirect } from 'next/navigation'
 import { Plus, ArrowUpCircle, ArrowDownCircle, Wallet, Settings } from 'lucide-react'
-import { formatDateTime } from '@/lib/utils'
 import { CreateTransactionDialog } from './components/CreateTransactionDialog'
 
 import { TransactionsTable } from './components/TransactionsTable'
@@ -44,6 +44,10 @@ export default async function FinancePage(props: Props) {
         getCategories(),
         getMembers(),
     ])
+
+    if (!['ADMIN', 'TREASURER'].includes(profile.role)) {
+        redirect('/dashboard')
+    }
 
     const formatCurrency = (amount: number, currency: string = 'ARS') => {
         return new Intl.NumberFormat('es-AR', {

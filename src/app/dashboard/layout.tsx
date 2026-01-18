@@ -14,12 +14,29 @@ export default async function DashboardLayout({
         redirect('/login')
     }
 
-    const navItems = [
-        { href: '/dashboard/finance', label: 'Finanzas', icon: Banknote },
-        { href: '/dashboard/annual-summary', label: 'Reportes', icon: PieChart },
-        { href: '/dashboard/reports', label: 'Descargas', icon: FileText },
-    ]
+    const navItems = []
 
+    // Finanzas: ADMIN, TREASURER
+    if (['ADMIN', 'TREASURER'].includes(profile.role)) {
+        navItems.push({ href: '/dashboard/finance', label: 'Finanzas', icon: Banknote })
+    }
+
+    // Reportes (Annual Summary): ADMIN, TREASURER, VIEWER
+    if (['ADMIN', 'TREASURER', 'VIEWER'].includes(profile.role)) {
+        navItems.push({ href: '/dashboard/annual-summary', label: 'Reportes', icon: PieChart })
+    }
+
+    // Descargas: ADMIN, TREASURER
+    if (['ADMIN', 'TREASURER'].includes(profile.role)) {
+        navItems.push({ href: '/dashboard/reports', label: 'Descargas', icon: FileText })
+    }
+
+    // Miembros: ADMIN, RRHH, VIEWER
+    if (['ADMIN', 'RRHH', 'VIEWER'].includes(profile.role)) {
+        navItems.push({ href: '/dashboard/members', label: 'Miembros', icon: Users })
+    }
+
+    // Admin Only
     if (profile.role === 'ADMIN') {
         navItems.push(
             { href: '/dashboard/users', label: 'Usuarios', icon: UsersKey },

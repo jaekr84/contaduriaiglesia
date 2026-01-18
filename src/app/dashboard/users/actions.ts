@@ -158,3 +158,31 @@ export async function deleteUser(userId: string) {
     }
 }
 
+
+export async function updateUserRole(userId: string, newRole: Role) {
+    const profile = await requireProfile()
+
+    if (profile.role !== 'ADMIN') {
+        return { error: 'No autorizado' }
+    }
+
+    if (profile.id === userId) {
+        return { error: 'No puedes cambiar tu propio rol' }
+    }
+
+    try {
+        await prisma.profile.update({
+            where: {
+                id: userId,
+                organizationId: profile.organizationId
+            },
+            data: { role: newRole }
+        })
+
+        revalidatePath('/dashboard/users')
+        return { success: true }
+    } catch (e) {
+        console.error('Error updating role:', e)
+        return { error: 'Error al actualizar el rol' }
+    }
+}

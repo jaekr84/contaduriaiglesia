@@ -58,6 +58,7 @@ enum Role {
   ADMIN
   TREASURER // Tesorero
   VIEWER
+  RRHH // Recursos Humanos - Solo acceso a miembros
 }
 
 model Category {
@@ -90,6 +91,10 @@ model Member {
   email     String?
   phone     String?
   address   String?
+  gender    String?
+  country   String?
+  state     String?
+  city      String?
   birthDate DateTime?
   
   organizationId String
@@ -211,6 +216,7 @@ enum AuditEventType {
   USER_INVITED
   USER_REMOVED
   INVITATION_REVOKED
+  INVITATION_ACCEPTED
 }
 
 enum AuditSeverity {

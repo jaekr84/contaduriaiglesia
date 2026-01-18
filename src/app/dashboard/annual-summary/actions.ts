@@ -66,6 +66,11 @@ export interface AnnualSummaryData {
 
 export async function getAnnualSummary(year: number, month?: number): Promise<AnnualSummaryData> {
     const profile = await requireProfile()
+
+    if (!['ADMIN', 'TREASURER', 'VIEWER'].includes(profile.role)) {
+        throw new Error('No autorizado')
+    }
+
     const startDate = getStartOfYearArgentina(year)
     const endDate = getEndOfYearArgentina(year)
 

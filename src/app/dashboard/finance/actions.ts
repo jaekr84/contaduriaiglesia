@@ -75,6 +75,11 @@ async function buildWhereClause(profile: any, filters?: FinanceFilters): Promise
 
 export async function getTransactions(filters?: FinanceFilters) {
     const profile = await requireProfile()
+
+    if (!['ADMIN', 'TREASURER'].includes(profile.role)) {
+        throw new Error('No autorizado')
+    }
+
     let where = await buildWhereClause(profile, filters)
 
     // Apply default month filter ONLY if no date range is specified in filters
@@ -125,6 +130,10 @@ export async function getCategories() {
 
 export async function getFinanceSummary(filters?: FinanceFilters) {
     const profile = await requireProfile()
+
+    if (!['ADMIN', 'TREASURER'].includes(profile.role)) {
+        throw new Error('No autorizado')
+    }
 
     // If no specific date filter is provided, default to current month for the summary
     // BUT if other filters are present (e.g. category), we might want to respect that without date?
@@ -186,6 +195,10 @@ export async function getFinanceSummary(filters?: FinanceFilters) {
 
 export async function createTransaction(formData: FormData) {
     const profile = await requireProfile()
+
+    if (!['ADMIN', 'TREASURER'].includes(profile.role)) {
+        return { error: 'No autorizado' }
+    }
 
     const amount = parseFloat(formData.get('amount') as string)
     const description = (formData.get('description') as string)?.trim() || null
@@ -263,6 +276,10 @@ export async function createTransaction(formData: FormData) {
 
 export async function createCategory(formData: FormData) {
     const profile = await requireProfile()
+
+    if (!['ADMIN', 'TREASURER'].includes(profile.role)) {
+        return { error: 'No autorizado' }
+    }
     const rawName = (formData.get('name') as string)
     const type = formData.get('type') as TransactionType
     const parentId = (formData.get('parentId') as string) || null
@@ -295,6 +312,10 @@ export async function createCategory(formData: FormData) {
 export async function deleteCategory(id: string) {
     const profile = await requireProfile()
 
+    if (!['ADMIN', 'TREASURER'].includes(profile.role)) {
+        return { error: 'No autorizado' }
+    }
+
     try {
         // Check if used in transactions
         const usageCount = await prisma.transaction.count({ where: { categoryId: id } })
@@ -318,6 +339,10 @@ export async function deleteCategory(id: string) {
 
 export async function bulkDeleteCategories(ids: string[]) {
     const profile = await requireProfile()
+
+    if (!['ADMIN', 'TREASURER'].includes(profile.role)) {
+        return { error: 'No autorizado' }
+    }
 
     try {
         // 1. Check usage for ALL
@@ -353,6 +378,10 @@ export async function bulkDeleteCategories(ids: string[]) {
 
 export async function updateCategory(id: string, formData: FormData) {
     const profile = await requireProfile()
+
+    if (!['ADMIN', 'TREASURER'].includes(profile.role)) {
+        return { error: 'No autorizado' }
+    }
     const name = (formData.get('name') as string).trim()
 
     try {
@@ -370,6 +399,10 @@ export async function updateCategory(id: string, formData: FormData) {
 
 export async function createExchange(formData: FormData) {
     const profile = await requireProfile()
+
+    if (!['ADMIN', 'TREASURER'].includes(profile.role)) {
+        return { error: 'No autorizado' }
+    }
 
     const amountOut = parseFloat(formData.get('amountOut') as string)
     const currencyOut = formData.get('currencyOut') as Currency
