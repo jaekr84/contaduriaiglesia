@@ -154,6 +154,7 @@ export default function ReportsPage() {
                     savingsRate: monthlyArs.income > 0 ? ((monthlyArs.income - monthlyArs.expense) / monthlyArs.income) * 100 : 0
                 },
                 monthly: [monthlyArs], // Pass single month if needed for charts, or empty. The PDF mainly uses totals and categories.
+                allMonths: [monthlyArs],
                 expensesByCategory: monthlyArs.expensesByCategory,
                 incomeByCategory: monthlyArs.incomeByCategory
             },
@@ -166,6 +167,7 @@ export default function ReportsPage() {
                     savingsRate: monthlyUsd.income > 0 ? ((monthlyUsd.income - monthlyUsd.expense) / monthlyUsd.income) * 100 : 0
                 },
                 monthly: [monthlyUsd],
+                allMonths: [monthlyUsd],
                 expensesByCategory: monthlyUsd.expensesByCategory,
                 incomeByCategory: monthlyUsd.incomeByCategory
             },

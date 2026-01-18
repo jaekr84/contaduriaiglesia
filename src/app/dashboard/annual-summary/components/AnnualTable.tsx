@@ -50,7 +50,7 @@ export function AnnualTable({ monthlyDataARS, monthlyDataUSD }: AnnualTableProps
                             <TableRow>
                                 <TableHead className="w-[100px]">Mes</TableHead>
                                 <TableHead className="text-center bg-muted/50" colSpan={4}>Pesos (ARS)</TableHead>
-                                <TableHead className="text-center bg-muted/30" colSpan={3}>Dólares (USD)</TableHead>
+                                <TableHead className="text-center bg-muted/30" colSpan={4}>Dólares (USD)</TableHead>
                             </TableRow>
                             <TableRow>
                                 <TableHead></TableHead>
@@ -63,12 +63,14 @@ export function AnnualTable({ monthlyDataARS, monthlyDataUSD }: AnnualTableProps
                                 <TableHead className="text-right bg-muted/30">Ingresos</TableHead>
                                 <TableHead className="text-right bg-muted/30">Gastos</TableHead>
                                 <TableHead className="text-right bg-muted/30">Balance</TableHead>
+                                <TableHead className="text-right bg-muted/30">%</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {monthlyDataARS.map((dataARS, index) => {
                                 const dataUSD = monthlyDataUSD[index];
                                 const savingsRateARS = dataARS.income > 0 ? ((dataARS.balance) / dataARS.income) * 100 : 0
+                                const savingsRateUSD = dataUSD.income > 0 ? ((dataUSD.balance) / dataUSD.income) * 100 : 0
 
                                 return (
                                     <TableRow key={dataARS.month}>
@@ -88,6 +90,7 @@ export function AnnualTable({ monthlyDataARS, monthlyDataUSD }: AnnualTableProps
                                         <TableCell className={`text-right font-bold bg-muted/30 ${dataUSD.balance >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
                                             {formatUSD(dataUSD.balance)}
                                         </TableCell>
+                                        <TableCell className="text-right bg-muted/30">{savingsRateUSD.toFixed(1)}%</TableCell>
                                     </TableRow>
                                 )
                             })}

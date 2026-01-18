@@ -30,7 +30,9 @@ export default async function CategoriesBreakdownPage({ searchParams }: PageProp
 
             <h2 className="text-3xl font-bold tracking-tight mb-6">{title} {currentYear}</h2>
 
-            <CategoryHierarchicalTable data={breakdownData} />
+            <div className="max-w-4xl mx-auto">
+                <CategoryHierarchicalTable data={breakdownData} />
+            </div>
 
             <div className="mt-8 text-center text-sm text-gray-500 print:block hidden">
                 <p>Generado autom&aacute;tica por Sistema de Gesti&oacute;n Iglesia</p>

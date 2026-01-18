@@ -136,10 +136,10 @@ export function SummaryCharts({ monthlyData, categoryData, incomeCategoryData, y
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-                <Card>
+                <Card className="flex flex-col">
                     <CardHeader>
                         <div className="flex items-center justify-between">
-                            <CardTitle>Top 10 Ingresos por Categoría</CardTitle>
+                            <CardTitle>Ingresos por Categoría</CardTitle>
                             <Link href={`/dashboard/annual-summary/categories?year=${year}&type=INCOME&currency=${currency}`}>
                                 <Button variant="ghost" size="sm" className="h-8 text-xs">
                                     Ver detalle
@@ -147,38 +147,40 @@ export function SummaryCharts({ monthlyData, categoryData, incomeCategoryData, y
                             </Link>
                         </div>
                     </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Categoría</TableHead>
-                                    <TableHead className="text-right">Monto</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {incomeCategoryData.length > 0 ? (
-                                    incomeCategoryData.map((category) => (
-                                        <TableRow key={category.id}>
-                                            <TableCell>{category.name}</TableCell>
-                                            <TableCell className="text-right">{formatCurrency(category.amount)}</TableCell>
-                                        </TableRow>
-                                    ))
-                                ) : (
+                    <CardContent className="flex-1 min-h-0">
+                        <div className="max-h-[400px] overflow-auto pr-2">
+                            <Table>
+                                <TableHeader>
                                     <TableRow>
-                                        <TableCell colSpan={2} className="text-center text-muted-foreground">
-                                            No hay datos de ingresos
-                                        </TableCell>
+                                        <TableHead>Categoría</TableHead>
+                                        <TableHead className="text-right">Monto</TableHead>
                                     </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
+                                </TableHeader>
+                                <TableBody>
+                                    {incomeCategoryData.length > 0 ? (
+                                        incomeCategoryData.map((category) => (
+                                            <TableRow key={category.id}>
+                                                <TableCell>{category.name}</TableCell>
+                                                <TableCell className="text-right">{formatCurrency(category.amount)}</TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={2} className="text-center text-muted-foreground">
+                                                No hay datos de ingresos
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
                     </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="flex flex-col">
                     <CardHeader>
                         <div className="flex items-center justify-between">
-                            <CardTitle>Top 10 Gastos por Categoría</CardTitle>
+                            <CardTitle>Gastos por Categoría</CardTitle>
                             <Link href={`/dashboard/annual-summary/categories?year=${year}&type=EXPENSE&currency=${currency}`}>
                                 <Button variant="ghost" size="sm" className="h-8 text-xs">
                                     Ver detalle
@@ -186,31 +188,33 @@ export function SummaryCharts({ monthlyData, categoryData, incomeCategoryData, y
                             </Link>
                         </div>
                     </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Categoría</TableHead>
-                                    <TableHead className="text-right">Monto</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {categoryData.length > 0 ? (
-                                    categoryData.map((category) => (
-                                        <TableRow key={category.id}>
-                                            <TableCell>{category.name}</TableCell>
-                                            <TableCell className="text-right">{formatCurrency(category.amount)}</TableCell>
-                                        </TableRow>
-                                    ))
-                                ) : (
+                    <CardContent className="flex-1 min-h-0">
+                        <div className="max-h-[400px] overflow-auto pr-2">
+                            <Table>
+                                <TableHeader>
                                     <TableRow>
-                                        <TableCell colSpan={2} className="text-center text-muted-foreground">
-                                            No hay datos de gastos
-                                        </TableCell>
+                                        <TableHead>Categoría</TableHead>
+                                        <TableHead className="text-right">Monto</TableHead>
                                     </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
+                                </TableHeader>
+                                <TableBody>
+                                    {categoryData.length > 0 ? (
+                                        categoryData.map((category) => (
+                                            <TableRow key={category.id}>
+                                                <TableCell>{category.name}</TableCell>
+                                                <TableCell className="text-right">{formatCurrency(category.amount)}</TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={2} className="text-center text-muted-foreground">
+                                                No hay datos de gastos
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
                     </CardContent>
                 </Card>
             </div>

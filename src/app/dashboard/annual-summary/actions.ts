@@ -42,6 +42,7 @@ export interface CurrencyTotals {
 export interface CurrencyData {
     totals: CurrencyTotals
     monthly: MonthlySummary[]
+    allMonths: MonthlySummary[]
     expensesByCategory: CategorySummary[]
     incomeByCategory: CategorySummary[]
 }
@@ -63,7 +64,7 @@ export interface AnnualSummaryData {
     exchanges: ExchangeEvent[]
 }
 
-export async function getAnnualSummary(year: number): Promise<AnnualSummaryData> {
+export async function getAnnualSummary(year: number, month?: number): Promise<AnnualSummaryData> {
     const profile = await requireProfile()
     const startDate = getStartOfYearArgentina(year)
     const endDate = getEndOfYearArgentina(year)
@@ -162,13 +163,6 @@ export async function getAnnualSummary(year: number): Promise<AnnualSummaryData>
         const incomeTx = group.find(t => t.type === 'INCOME')
 
         if (expenseTx && incomeTx) {
-            // Extract rate from description or just display description
-            // Description format: "TC: 1 USD = 1200,00 ARS"
-            // Let's optimize description display - maybe just keep the rate part?
-            // User requested "tipo de cambio". The description ALREADY contains it.
-            // Let's use the description as is or simplify.
-            // Actually, description is "TC: ..."
-
             exchanges.push({
                 date: expenseTx.date,
                 description: expenseTx.description || '',
@@ -185,7 +179,7 @@ export async function getAnnualSummary(year: number): Promise<AnnualSummaryData>
     exchanges.sort((a, b) => b.date.getTime() - a.date.getTime())
 
     transactions.forEach(tx => {
-        const month = tx.date.getMonth()
+        const monthIndex = tx.date.getMonth()
         const amount = Number(tx.amount)
         const isARS = tx.currency === 'ARS'
         const isUSD = tx.currency === 'USD'
@@ -208,9 +202,6 @@ export async function getAnnualSummary(year: number): Promise<AnnualSummaryData>
             const parent = map.get(parentId)!
             parent.amount += amt
 
-            // Add to subcategory (even if it's the same as parent, strict layout prefers explicit sub items if we want detailed breakdwon)
-            // Or we only add to subcategories if cat.id !== parentId
-            // Let's treat the category itself as a sub entry so we don't lose the breakdown
             let sub = parent.subcategories?.find(s => s.id === cat.id)
             if (!sub) {
                 sub = { id: cat.id, name: cat.name, amount: 0 }
@@ -220,40 +211,40 @@ export async function getAnnualSummary(year: number): Promise<AnnualSummaryData>
         }
 
         if (isARS) {
-            monthlyDataARS[month].transactions.push(txSummary)
+            monthlyDataARS[monthIndex].transactions.push(txSummary)
             if (tx.type === 'INCOME') {
-                monthlyDataARS[month].income += amount
-                monthlyDataARS[month].balance += amount
+                monthlyDataARS[monthIndex].income += amount
+                monthlyDataARS[monthIndex].balance += amount
                 totalsARS.income += amount
 
                 updateCategoryMap(incomeCategoryMapARS, tx.category, amount)
-                updateCategoryMap(monthlyIncomeCategoryMapARS[month], tx.category, amount)
+                updateCategoryMap(monthlyIncomeCategoryMapARS[monthIndex], tx.category, amount)
 
             } else if (tx.type === 'EXPENSE') {
-                monthlyDataARS[month].expense += amount
-                monthlyDataARS[month].balance -= amount
+                monthlyDataARS[monthIndex].expense += amount
+                monthlyDataARS[monthIndex].balance -= amount
                 totalsARS.expense += amount
 
                 updateCategoryMap(expenseCategoryMapARS, tx.category, amount)
-                updateCategoryMap(monthlyExpenseCategoryMapARS[month], tx.category, amount)
+                updateCategoryMap(monthlyExpenseCategoryMapARS[monthIndex], tx.category, amount)
             }
         } else if (isUSD) {
-            monthlyDataUSD[month].transactions.push(txSummary)
+            monthlyDataUSD[monthIndex].transactions.push(txSummary)
             if (tx.type === 'INCOME') {
-                monthlyDataUSD[month].income += amount
-                monthlyDataUSD[month].balance += amount
+                monthlyDataUSD[monthIndex].income += amount
+                monthlyDataUSD[monthIndex].balance += amount
                 totalsUSD.income += amount
 
                 updateCategoryMap(incomeCategoryMapUSD, tx.category, amount)
-                updateCategoryMap(monthlyIncomeCategoryMapUSD[month], tx.category, amount)
+                updateCategoryMap(monthlyIncomeCategoryMapUSD[monthIndex], tx.category, amount)
 
             } else if (tx.type === 'EXPENSE') {
-                monthlyDataUSD[month].expense += amount
-                monthlyDataUSD[month].balance -= amount
+                monthlyDataUSD[monthIndex].expense += amount
+                monthlyDataUSD[monthIndex].balance -= amount
                 totalsUSD.expense += amount
 
                 updateCategoryMap(expenseCategoryMapUSD, tx.category, amount)
-                updateCategoryMap(monthlyExpenseCategoryMapUSD[month], tx.category, amount)
+                updateCategoryMap(monthlyExpenseCategoryMapUSD[monthIndex], tx.category, amount)
             }
         }
     })
@@ -285,26 +276,54 @@ export async function getAnnualSummary(year: number): Promise<AnnualSummaryData>
         currentBalanceUSD = monthlyDataUSD[i].initialBalance + monthlyDataUSD[i].income - monthlyDataUSD[i].expense
     }
 
-
     const calculateMetrics = (income: number, expense: number, initial: number) => ({
         income,
         expense,
-        balance: initial + income - expense, // Correct formula including initial
+        balance: initial + income - expense,
         initialBalance: initial,
         savingsRate: income > 0 ? ((income - expense) / income) * 100 : 0
     })
 
+    // If a specific month is selected, filter the return data
+    if (month !== undefined && month >= 0 && month <= 11) {
+        // Use the monthly data for that specific month as the "totals"
+        const selectedMonthARS = monthlyDataARS[month]
+        const selectedMonthUSD = monthlyDataUSD[month]
+
+        return {
+            year,
+            ars: {
+                totals: calculateMetrics(selectedMonthARS.income, selectedMonthARS.expense, selectedMonthARS.initialBalance),
+                monthly: [selectedMonthARS], // Only show this month in charts/table
+                allMonths: monthlyDataARS,
+                expensesByCategory: selectedMonthARS.expensesByCategory,
+                incomeByCategory: selectedMonthARS.incomeByCategory
+            },
+            usd: {
+                totals: calculateMetrics(selectedMonthUSD.income, selectedMonthUSD.expense, selectedMonthUSD.initialBalance),
+                monthly: [selectedMonthUSD],
+                allMonths: monthlyDataUSD,
+                expensesByCategory: selectedMonthUSD.expensesByCategory,
+                incomeByCategory: selectedMonthUSD.incomeByCategory
+            },
+            exchanges: exchanges.filter(e => e.date.getMonth() === month)
+        }
+    }
+
+    // Default: Annual Summary (Full Year)
     return {
         year,
         ars: {
             totals: calculateMetrics(totalsARS.income, totalsARS.expense, initialBalanceARS),
             monthly: monthlyDataARS,
+            allMonths: monthlyDataARS,
             expensesByCategory: processCategoryMap(expenseCategoryMapARS),
             incomeByCategory: processCategoryMap(incomeCategoryMapARS)
         },
         usd: {
             totals: calculateMetrics(totalsUSD.income, totalsUSD.expense, initialBalanceUSD),
             monthly: monthlyDataUSD,
+            allMonths: monthlyDataUSD,
             expensesByCategory: processCategoryMap(expenseCategoryMapUSD),
             incomeByCategory: processCategoryMap(incomeCategoryMapUSD)
         },

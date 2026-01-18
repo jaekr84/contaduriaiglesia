@@ -15,12 +15,9 @@ export default async function DashboardLayout({
     }
 
     const navItems = [
-        { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { href: '/dashboard/members', label: 'Miembros', icon: Users },
         { href: '/dashboard/finance', label: 'Finanzas', icon: Banknote },
-        { href: '/dashboard/balance', label: 'Balance', icon: LineChart },
-        { href: '/dashboard/annual-summary', label: 'Resumen', icon: PieChart },
-        { href: '/dashboard/reports', label: 'Reportes', icon: FileText },
+        { href: '/dashboard/annual-summary', label: 'Reportes', icon: PieChart },
+        { href: '/dashboard/reports', label: 'Descargas', icon: FileText },
     ]
 
     if (profile.role === 'ADMIN') {
@@ -44,9 +41,10 @@ export default async function DashboardLayout({
                                 key={item.href}
                                 href={item.href}
                                 title={item.label}
-                                className="flex h-10 w-10 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus:bg-zinc-100 focus:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
+                                className="flex h-10 items-center justify-center rounded-md px-3 gap-2 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus:bg-zinc-100 focus:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
                             >
                                 <item.icon className="h-5 w-5" />
+                                <span className="text-sm font-medium whitespace-nowrap">{item.label}</span>
                             </Link>
                         ))}
                     </nav>

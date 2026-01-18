@@ -11,7 +11,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CategoryBreakdownItem } from "../../actions"
 import { FolderIcon, FolderOpenIcon, ChevronDown, ChevronRight } from "lucide-react" // Ensure lucide-react is installed or use alternatives
-import { useState } from "react"
+import { useState, Fragment } from "react"
 import { cn } from "@/lib/utils"
 
 interface CategoryHierarchicalTableProps {
@@ -28,7 +28,9 @@ export function CategoryHierarchicalTable({ data }: CategoryHierarchicalTablePro
     }
 
     // State to track expanded category IDs
-    const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+    const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
+        return new Set(data.map(item => item.id))
+    })
 
     const toggleExpand = (id: string) => {
         const newExpanded = new Set(expandedIds)
@@ -41,50 +43,54 @@ export function CategoryHierarchicalTable({ data }: CategoryHierarchicalTablePro
     }
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Detalle de Gastos por Categoría</CardTitle>
-            </CardHeader>
-            <CardContent>
+        <Card className="border shadow-sm">
+            <CardContent className="p-0">
                 <Table>
                     <TableHeader>
-                        <TableRow>
-                            <TableHead className="w-[500px]">Categoría</TableHead>
-                            <TableHead className="text-right">Total</TableHead>
+                        <TableRow className="hover:bg-transparent">
+                            <TableHead className="uppercase text-xs font-bold text-muted-foreground tracking-wider h-12 pl-6">Categoría</TableHead>
+                            <TableHead className="uppercase text-xs font-bold text-muted-foreground tracking-wider h-12 text-right w-[200px] pr-6">Total</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {data.map((group) => {
+                        {data.map((group, index) => {
                             const isExpanded = expandedIds.has(group.id)
                             const hasSubcategories = group.subcategories.length > 1 || (group.subcategories.length === 1 && group.subcategories[0].id !== group.id)
 
                             return (
-                                <>
+                                <Fragment key={group.id}>
                                     <TableRow
                                         key={group.id}
-                                        className={cn("cursor-pointer hover:bg-muted/50", hasSubcategories && "font-medium")}
+                                        className={cn(
+                                            "cursor-pointer hover:bg-sky-100 transition-colors border-b-0",
+                                            index % 2 === 0 ? "bg-white" : "bg-sky-50"
+                                        )}
                                         onClick={() => hasSubcategories && toggleExpand(group.id)}
                                     >
-                                        <TableCell className="flex items-center gap-2">
-                                            {hasSubcategories ? (
-                                                isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground mr-1" /> : <ChevronRight className="h-4 w-4 text-muted-foreground mr-1" />
-                                            ) : <span className="w-5 mr-1"></span>}
-                                            {group.name}
+                                        <TableCell className="pl-6 py-4">
+                                            <div className="flex items-center gap-2">
+                                                {hasSubcategories ? (
+                                                    isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                                ) : <span className="w-4"></span>}
+                                                <span className="font-bold text-sm tracking-tight">{group.name}</span>
+                                            </div>
                                         </TableCell>
-                                        <TableCell className="text-right font-bold">{formatCurrency(group.total)}</TableCell>
+                                        <TableCell className="text-right py-4 font-bold tabular-nums text-sm pr-6">
+                                            {formatCurrency(group.total)}
+                                        </TableCell>
                                     </TableRow>
 
-                                    {isExpanded && group.subcategories.map(sub => (
-                                        <TableRow key={sub.id} className="bg-muted/20 border-0">
-                                            <TableCell className="pl-10 text-sm text-muted-foreground">
-                                                {sub.name}
+                                    {isExpanded && hasSubcategories && group.subcategories.map(sub => (
+                                        <TableRow key={sub.id} className="bg-sky-50/50 border-b-0 hover:bg-sky-100/50">
+                                            <TableCell className="pl-14 py-2">
+                                                <span className="text-sm text-muted-foreground">{sub.name}</span>
                                             </TableCell>
-                                            <TableCell className="text-right text-sm text-muted-foreground">
+                                            <TableCell className="text-right py-2 text-sm text-muted-foreground tabular-nums pr-6">
                                                 {formatCurrency(sub.total)}
                                             </TableCell>
                                         </TableRow>
                                     ))}
-                                </>
+                                </Fragment>
                             )
                         })}
                     </TableBody>
