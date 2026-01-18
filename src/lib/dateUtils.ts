@@ -21,17 +21,16 @@ export const formatDateTime = (date: Date | string): string => {
 }
 
 export const formatCurrency = (amount: number, currency: 'ARS' | 'USD'): string => {
-    // ARS is formatting locale es-AR ($ 1.234,56)
-    // USD is formatting locale en-US ($1,234.56) or we can standardise both to 'es-AR' depending on preference
-    // User requested "formato regional de Argentina" for currency too, but often USD is kept in US format.
-    // However, usually "formatCurrency" implies displaying the value. 
-    // The request said "Aprovechando la localización, para pesos argentinos ($)".
-    // I'll stick to 'es-AR' for ARS and 'en-US' for USD to allow clear differentiation, or 'es-AR' for both if desired.
-    // Given usage in actions.ts/PDF, keeping the distinction is safer UX.
-    const locale = currency === 'ARS' ? 'es-AR' : 'en-US'
-    return new Intl.NumberFormat(locale, {
+    if (currency === 'USD') {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+        }).format(amount).replace('$', 'US$ ')
+    }
+
+    return new Intl.NumberFormat('es-AR', {
         style: 'currency',
-        currency: currency,
+        currency: 'ARS',
     }).format(amount)
 }
 

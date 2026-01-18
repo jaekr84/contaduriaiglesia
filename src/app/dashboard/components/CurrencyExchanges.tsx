@@ -1,6 +1,7 @@
 'use client'
 
 import { ArrowRightLeft } from 'lucide-react'
+import { formatCurrency, formatDate } from '@/lib/dateUtils'
 
 interface CurrencyExchange {
     id: string
@@ -18,20 +19,7 @@ interface Props {
 
 export function CurrencyExchanges({ currencyExchanges }: Props) {
 
-    const formatCurrency = (amount: number, currency: string) => {
-        return new Intl.NumberFormat('es-AR', {
-            style: 'currency',
-            currency: currency,
-        }).format(amount)
-    }
 
-    const formatDate = (date: Date) => {
-        return new Date(date).toLocaleDateString('es-AR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-        })
-    }
 
     if (currencyExchanges.length === 0) {
         return null // Don't show section if no exchanges
@@ -73,7 +61,7 @@ export function CurrencyExchanges({ currencyExchanges }: Props) {
                                 <div className="space-y-1">
                                     {Object.entries(totals).map(([currency, total]) => (
                                         <div key={currency} className="font-bold text-zinc-900 dark:text-zinc-50">
-                                            {formatCurrency(total, currency)}
+                                            {formatCurrency(total, currency as 'ARS' | 'USD')}
                                         </div>
                                     ))}
                                 </div>
@@ -107,7 +95,7 @@ export function CurrencyExchanges({ currencyExchanges }: Props) {
                                 </td>
                                 <td className="px-4 py-2 text-right">
                                     <span className={`text-sm font-medium ${exchange.type === 'INCOME' ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'}`}>
-                                        {exchange.type === 'INCOME' ? '+' : '-'}{formatCurrency(Number(exchange.amount), exchange.currency)}
+                                        {exchange.type === 'INCOME' ? '+' : '-'}{formatCurrency(Number(exchange.amount), exchange.currency as 'ARS' | 'USD')}
                                     </span>
                                 </td>
                             </tr>

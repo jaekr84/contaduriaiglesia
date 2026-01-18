@@ -10,7 +10,6 @@ import { getMembers } from '../members/actions'
 import { requireProfile } from '@/lib/auth'
 import Link from 'next/link'
 
-import { FinanceFilters } from './components/FinanceFilters'
 import { QuickIncomeForm } from './components/QuickIncomeForm'
 import { QuickExpenseForm } from './components/QuickExpenseForm'
 
@@ -133,21 +132,42 @@ export default async function FinancePage(props: Props) {
                 <QuickExpenseForm categories={categories} userRole={profile.role} />
             </div>
 
+            {/* Split Transactions Tables */}
+            <div className="grid gap-6 xl:grid-cols-2">
+                {/* Income Table */}
+                <div className="space-y-4">
+                    <h2 className="text-lg font-semibold text-green-700 dark:text-green-500 flex items-center gap-2">
+                        <ArrowUpCircle className="h-5 w-5" />
+                        Ingresos Recientes
+                    </h2>
+                    <TransactionsTable
+                        transactions={transactions.filter(t => t.type === 'INCOME').map(t => ({
+                            ...t,
+                            amount: Number(t.amount)
+                        }))}
+                        userRole={profile.role}
+                        categories={categories}
+                        variant="compact"
+                    />
+                </div>
 
-            {/* <NewTransactionCard categories={categories} members={members} /> */}
-
-            <FinanceFilters categories={categories} members={members} />
-
-            {/* Transactions List */}
-            <TransactionsTable
-                transactions={transactions.map(t => ({
-                    ...t,
-                    amount: Number(t.amount)
-                }))}
-                userRole={profile.role}
-                categories={categories}
-            />
+                {/* Expense Table */}
+                <div className="space-y-4">
+                    <h2 className="text-lg font-semibold text-red-700 dark:text-red-500 flex items-center gap-2">
+                        <ArrowDownCircle className="h-5 w-5" />
+                        Gastos Recientes
+                    </h2>
+                    <TransactionsTable
+                        transactions={transactions.filter(t => t.type === 'EXPENSE').map(t => ({
+                            ...t,
+                            amount: Number(t.amount)
+                        }))}
+                        userRole={profile.role}
+                        categories={categories}
+                        variant="compact"
+                    />
+                </div>
+            </div>
         </div>
     )
 }
-

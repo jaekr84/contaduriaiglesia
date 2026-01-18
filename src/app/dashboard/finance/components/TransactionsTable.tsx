@@ -3,8 +3,9 @@
 import { useState } from 'react'
 import { formatDateTime } from '@/lib/utils'
 import { formatCurrency } from '@/lib/dateUtils'
-import { X, Plus } from 'lucide-react'
+import { X, Plus, Info } from 'lucide-react'
 import { CancelTransactionDialog } from './CancelTransactionDialog'
+import { TransactionDetailDialog } from './TransactionDetailDialog'
 
 import { Category, Member } from '@prisma/client'
 import { CreateCategoryDialog } from './CreateCategoryDialog'
@@ -36,31 +37,42 @@ interface Props {
     transactions: Transaction[]
     userRole: string
     categories: Category[]
-
+    variant?: 'default' | 'compact'
 }
 
-export function TransactionsTable({ transactions, userRole, categories }: Props) {
+export function TransactionsTable({ transactions, userRole, categories, variant = 'default' }: Props) {
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
+    const [detailTransaction, setDetailTransaction] = useState<Transaction | null>(null)
 
     const canCancel = userRole === 'ADMIN' || userRole === 'TREASURER'
+    const isCompact = variant === 'compact'
 
     return (
         <>
-            <div className="rounded-md border border-zinc-200 dark:border-zinc-800 overflow-hidden">
-                <div className="relative w-full overflow-auto max-h-[600px]">
+            <div className={`rounded-md border border-zinc-200 dark:border-zinc-800 overflow-hidden ${isCompact ? 'bg-white dark:bg-zinc-950' : ''}`}>
+                <div className="relative w-full">
                     <table className="w-full caption-bottom text-sm text-left">
                         <thead className="sticky top-0 z-10 [&_tr]:border-b">
                             <tr className="border-b border-zinc-200 bg-zinc-50 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900">
-                                <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300">Fecha</th>
-                                <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300">Tipo</th>
-                                <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300">Categoría</th>
-                                <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300">Subcategoría</th>
-                                <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300 text-right">Monto</th>
-                                <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300">Descripción</th>
-
-                                <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300">Registrado Por</th>
-                                {canCancel && (
-                                    <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300 text-center">Acciones</th>
+                                <th className="h-8 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300">Fecha</th>
+                                {isCompact ? (
+                                    <>
+                                        <th className="h-8 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300">Categoría</th>
+                                        <th className="h-8 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300">Subcategoría</th>
+                                        <th className="h-8 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300 text-right">Monto</th>
+                                    </>
+                                ) : (
+                                    <>
+                                        <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300">Tipo</th>
+                                        <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300">Categoría</th>
+                                        <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300">Subcategoría</th>
+                                        <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300 text-right">Monto</th>
+                                        <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300">Descripción</th>
+                                        <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300">Registrado Por</th>
+                                        {canCancel && (
+                                            <th className="h-12 px-4 align-middle font-medium text-zinc-600 dark:text-zinc-300 text-center">Acciones</th>
+                                        )}
+                                    </>
                                 )}
                             </tr>
 
@@ -68,7 +80,7 @@ export function TransactionsTable({ transactions, userRole, categories }: Props)
                         <tbody className="[&_tr:last-child]:border-0">
                             {transactions.length === 0 ? (
                                 <tr>
-                                    <td colSpan={canCancel ? 8 : 7} className="p-8 text-center text-zinc-500">
+                                    <td colSpan={isCompact ? 4 : (canCancel ? 8 : 7)} className="p-8 text-center text-zinc-500">
                                         No hay movimientos registrados este mes.
                                     </td>
                                 </tr>
@@ -76,57 +88,77 @@ export function TransactionsTable({ transactions, userRole, categories }: Props)
                                 transactions.map((t) => (
                                     <tr
                                         key={t.id}
-                                        className={`border-b border-zinc-200 transition-colors dark:border-zinc-800 ${t.cancelledAt
+                                        onClick={() => isCompact && setDetailTransaction(t)}
+                                        className={`border-b border-zinc-200 transition-colors dark:border-zinc-800 ${isCompact ? 'cursor-pointer' : ''} ${t.cancelledAt
                                             ? 'bg-red-50 hover:bg-red-100/70 dark:bg-red-950/20 dark:hover:bg-red-950/30'
                                             : 'hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50'
                                             }`}
                                     >
-                                        <td className="p-4 align-middle text-zinc-600 dark:text-zinc-400">
+                                        <td className={`${isCompact ? 'px-2 py-1' : 'p-4'} align-middle text-zinc-600 dark:text-zinc-400`}>
                                             {formatDateTime(t.date)}
                                         </td>
-                                        <td className="p-4 align-middle">
-                                            <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium rings-1 ring-inset ${t.type === 'INCOME'
-                                                ? 'bg-green-50 text-green-700 ring-green-600/20 dark:bg-green-900/20 dark:text-green-400 dark:ring-green-500/20'
-                                                : 'bg-red-50 text-red-700 ring-red-600/20 dark:bg-red-900/20 dark:text-red-400 dark:ring-red-500/20'
-                                                }`}>
-                                                {t.type === 'INCOME' ? 'Ingreso' : 'Gasto'}
-                                            </span>
-                                        </td>
-                                        <td className="p-4 align-middle text-zinc-600 dark:text-zinc-400">
-                                            {t.category.parent ? t.category.parent.name : t.category.name}
-                                        </td>
-                                        <td className="p-4 align-middle">
-                                            <span className="text-zinc-600 dark:text-zinc-400 text-sm">
-                                                {t.category.parent ? t.category.name : '-'}
-                                            </span>
-                                        </td>
-                                        <td className={`p-4 align-middle text-right font-bold ${t.type === 'INCOME' ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
-                                            }`}>
-                                            {t.type === 'INCOME' ? '+' : '-'}{formatCurrency(Number(t.amount), t.currency as 'ARS' | 'USD')}
-                                        </td>
-                                        <td className="p-4 align-middle font-medium text-zinc-900 dark:text-zinc-50">
-                                            {t.description || '-'}
-                                        </td>
-
-                                        <td className="p-4 align-middle text-zinc-600 dark:text-zinc-400">
-                                            {t.createdBy?.fullName || t.createdBy?.email || '-'}
-                                        </td>
-                                        {canCancel && (
-                                            <td className="p-4 align-middle text-center">
-                                                {t.cancelledAt ? (
-                                                    <span className="inline-flex items-center justify-center rounded-md px-2 py-1 text-xs font-medium text-red-700 dark:text-red-300">
-                                                        Anulada
+                                        {isCompact ? (
+                                            <>
+                                                <td className="px-2 py-1 align-middle font-medium text-zinc-900 dark:text-zinc-50">
+                                                    {t.category.parent ? t.category.parent.name : t.category.name}
+                                                </td>
+                                                <td className="px-2 py-1 align-middle text-zinc-500 text-sm">
+                                                    {t.category.parent ? t.category.name : '-'}
+                                                </td>
+                                                <td className={`px-2 py-1 align-middle text-right font-bold ${t.type === 'INCOME' ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
+                                                    }`}>
+                                                    {t.type === 'INCOME' ? '+' : '-'}{formatCurrency(Number(t.amount), t.currency as 'ARS' | 'USD')}
+                                                </td>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <td className="p-4 align-middle">
+                                                    <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium rings-1 ring-inset ${t.type === 'INCOME'
+                                                        ? 'bg-green-50 text-green-700 ring-green-600/20 dark:bg-green-900/20 dark:text-green-400 dark:ring-green-500/20'
+                                                        : 'bg-red-50 text-red-700 ring-red-600/20 dark:bg-red-900/20 dark:text-red-400 dark:ring-red-500/20'
+                                                        }`}>
+                                                        {t.type === 'INCOME' ? 'Ingreso' : 'Gasto'}
                                                     </span>
-                                                ) : (
-                                                    <button
-                                                        onClick={() => setSelectedTransaction(t)}
-                                                        className="inline-flex items-center justify-center rounded-md p-2 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors"
-                                                        title="Anular transacción"
-                                                    >
-                                                        <X className="h-4 w-4" />
-                                                    </button>
+                                                </td>
+                                                <td className="p-4 align-middle text-zinc-600 dark:text-zinc-400">
+                                                    {t.category.parent ? t.category.parent.name : t.category.name}
+                                                </td>
+                                                <td className="p-4 align-middle">
+                                                    <span className="text-zinc-600 dark:text-zinc-400 text-sm">
+                                                        {t.category.parent ? t.category.name : '-'}
+                                                    </span>
+                                                </td>
+                                                <td className={`p-4 align-middle text-right font-bold ${t.type === 'INCOME' ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'
+                                                    }`}>
+                                                    {t.type === 'INCOME' ? '+' : '-'}{formatCurrency(Number(t.amount), t.currency as 'ARS' | 'USD')}
+                                                </td>
+                                                <td className="p-4 align-middle font-medium text-zinc-900 dark:text-zinc-50">
+                                                    {t.description || '-'}
+                                                </td>
+                                                <td className="p-4 align-middle text-zinc-600 dark:text-zinc-400">
+                                                    {t.createdBy?.fullName || t.createdBy?.email || '-'}
+                                                </td>
+                                                {canCancel && (
+                                                    <td className="p-4 align-middle text-center">
+                                                        {t.cancelledAt ? (
+                                                            <span className="inline-flex items-center justify-center rounded-md px-2 py-1 text-xs font-medium text-red-700 dark:text-red-300">
+                                                                Anulada
+                                                            </span>
+                                                        ) : (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation()
+                                                                    setSelectedTransaction(t)
+                                                                }}
+                                                                className="inline-flex items-center justify-center rounded-md p-2 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors"
+                                                                title="Anular transacción"
+                                                            >
+                                                                <X className="h-4 w-4" />
+                                                            </button>
+                                                        )}
+                                                    </td>
                                                 )}
-                                            </td>
+                                            </>
                                         )}
                                     </tr>
                                 ))
@@ -141,6 +173,15 @@ export function TransactionsTable({ transactions, userRole, categories }: Props)
                     transaction={selectedTransaction}
                     isOpen={!!selectedTransaction}
                     onClose={() => setSelectedTransaction(null)}
+                />
+            )}
+
+            {detailTransaction && (
+                <TransactionDetailDialog
+                    transaction={detailTransaction}
+                    isOpen={!!detailTransaction}
+                    onClose={() => setDetailTransaction(null)}
+                    canCancel={canCancel}
                 />
             )}
         </>
