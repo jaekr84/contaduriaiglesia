@@ -92,8 +92,8 @@ export default async function DashboardPage(props: Props) {
                 </div>
             </div>
 
-            {/* Category Analysis */}
-            <div className="grid gap-4 md:grid-cols-2">
+            {/* Category Analysis & Currency Exchange */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <div className="space-y-4">
                     <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Ingresos por Categoría</h2>
                     <IncomesByCategory incomesByCategory={incomesByCategory} />
@@ -102,73 +102,9 @@ export default async function DashboardPage(props: Props) {
                     <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Gastos por Categoría</h2>
                     <ExpensesByCategory expensesByCategory={expensesByCategory} />
                 </div>
-            </div>
-
-            {/* Bottom Row: Currency Exchange & Recent Activity */}
-            <div className="grid gap-4 lg:grid-cols-3">
-                {/* Currency Exchanges - Takes up 1 column */}
-                <div className="lg:col-span-1 space-y-4">
+                <div className="space-y-4">
                     <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Cambios de Moneda</h2>
                     <CurrencyExchanges currencyExchanges={currencyExchanges} />
-                </div>
-
-                {/* Recent Transactions - Takes up 2 columns */}
-                <div className="lg:col-span-2 space-y-4">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Actividad Reciente</h2>
-                        <Link
-                            href="/dashboard/finance"
-                            className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400"
-                        >
-                            Ver todo
-                            <ArrowRight className="h-4 w-4" />
-                        </Link>
-                    </div>
-
-                    <div className="rounded-lg border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-                        {recentTransactions.length === 0 ? (
-                            <div className="p-8 text-center text-zinc-500">
-                                No hay transacciones registradas aún.
-                            </div>
-                        ) : (
-                            <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
-                                {recentTransactions.map((transaction) => (
-                                    <div key={transaction.id} className="p-4 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="font-medium text-zinc-900 dark:text-zinc-50">
-                                                        {transaction.category.parent ? transaction.category.parent.name : transaction.category.name}
-                                                    </span>
-                                                    {transaction.category.parent && (
-                                                        <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                                                            • {transaction.category.name}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <div className="flex items-center gap-2 mt-1">
-                                                    <span className="text-sm text-zinc-500 dark:text-zinc-400">
-                                                        {formatDateTime(transaction.date)}
-                                                    </span>
-                                                    {transaction.description && (
-                                                        <>
-                                                            <span className="text-zinc-300 dark:text-zinc-700">•</span>
-                                                            <span className="text-sm text-zinc-600 dark:text-zinc-400">
-                                                                {transaction.description}
-                                                            </span>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <div className={`text-lg font-bold ${transaction.type === 'INCOME' ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'}`}>
-                                                {transaction.type === 'INCOME' ? '+' : '-'}{formatCurrency(Number(transaction.amount), transaction.currency)}
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
                 </div>
             </div>
 

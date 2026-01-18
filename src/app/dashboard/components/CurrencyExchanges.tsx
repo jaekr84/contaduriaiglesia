@@ -39,28 +39,28 @@ export function CurrencyExchanges({ currencyExchanges }: Props) {
                 <table className="w-full">
                     <thead className="border-b border-zinc-200 dark:border-zinc-800">
                         <tr>
-                            <th className="px-4 py-3 text-left text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                            <th className="px-3 py-2 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400">
                                 Cambios de Moneda
                             </th>
-                            <th className="px-4 py-3 text-right text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                            <th className="px-3 py-2 text-right text-xs font-medium text-zinc-500 dark:text-zinc-400">
                                 Total
                             </th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr className="group border-b border-zinc-200 dark:border-zinc-800">
-                            <td className="px-4 py-3">
+                            <td className="px-3 py-2">
                                 <div className="flex items-center gap-2">
-                                    <ArrowRightLeft className="h-4 w-4 text-zinc-400" />
-                                    <span className="font-medium text-zinc-900 dark:text-zinc-50">
-                                        Cambio de Moneda ({currencyExchanges.length} movimientos)
+                                    <ArrowRightLeft className="h-3 w-3 text-zinc-400" />
+                                    <span className="font-medium text-sm text-zinc-900 dark:text-zinc-50">
+                                        Cambio de Moneda ({currencyExchanges.length} movs)
                                     </span>
                                 </div>
                             </td>
-                            <td className="px-4 py-3 text-right">
+                            <td className="px-3 py-2 text-right">
                                 <div className="space-y-1">
                                     {Object.entries(totals).map(([currency, total]) => (
-                                        <div key={currency} className="font-bold text-zinc-900 dark:text-zinc-50">
+                                        <div key={currency} className="font-medium text-sm text-zinc-900 dark:text-zinc-50">
                                             {formatCurrency(total, currency as 'ARS' | 'USD')}
                                         </div>
                                     ))}
@@ -70,7 +70,7 @@ export function CurrencyExchanges({ currencyExchanges }: Props) {
                         {/* Exchange Detail Rows */}
                         {currencyExchanges.map((exchange) => (
                             <tr key={exchange.id} className="bg-zinc-50 dark:bg-zinc-900/30">
-                                <td className="px-4 py-2 pl-12">
+                                <td className="px-3 py-1.5 pl-8">
                                     <div className="flex items-center gap-2 text-sm">
                                         <span className="text-zinc-600 dark:text-zinc-400">
                                             {formatDate(exchange.date)}
@@ -86,14 +86,14 @@ export function CurrencyExchanges({ currencyExchanges }: Props) {
                                         {exchange.exchangeRate && (
                                             <>
                                                 <span className="text-zinc-300 dark:text-zinc-700">•</span>
-                                                <span className="text-xs text-zinc-500">
+                                                <span className="text-sm text-zinc-500">
                                                     TC: {exchange.exchangeRate.toFixed(2)}
                                                 </span>
                                             </>
                                         )}
                                     </div>
                                 </td>
-                                <td className="px-4 py-2 text-right">
+                                <td className="px-3 py-1.5 text-right">
                                     <span className={`text-sm font-medium ${exchange.type === 'INCOME' ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'}`}>
                                         {exchange.type === 'INCOME' ? '+' : '-'}{formatCurrency(Number(exchange.amount), exchange.currency as 'ARS' | 'USD')}
                                     </span>

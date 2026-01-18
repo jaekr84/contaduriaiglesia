@@ -19,6 +19,7 @@ interface Transaction {
     description: string | null
     date: Date
     cancelledAt: Date | null
+    cancellationReason: string | null
     category: {
         name: string
         parent: { name: string } | null
@@ -168,20 +169,26 @@ export function TransactionsTable({ transactions, userRole, categories, variant 
                 </div>
             </div>
 
-            {selectedTransaction && (
-                <CancelTransactionDialog
-                    transaction={selectedTransaction}
-                    isOpen={!!selectedTransaction}
-                    onClose={() => setSelectedTransaction(null)}
-                />
-            )}
-
+            {/* Note: Render DetailDialog BEFORE CancelDialog so CancelDialog (if open) stacks on top */}
             {detailTransaction && (
                 <TransactionDetailDialog
                     transaction={detailTransaction}
                     isOpen={!!detailTransaction}
                     onClose={() => setDetailTransaction(null)}
+                    onCancel={() => setSelectedTransaction(detailTransaction)}
                     canCancel={canCancel}
+                />
+            )}
+
+            {selectedTransaction && (
+                <CancelTransactionDialog
+                    transaction={selectedTransaction}
+                    isOpen={!!selectedTransaction}
+                    onClose={() => setSelectedTransaction(null)}
+                    onSuccess={() => {
+                        setSelectedTransaction(null)
+                        setDetailTransaction(null)
+                    }}
                 />
             )}
         </>

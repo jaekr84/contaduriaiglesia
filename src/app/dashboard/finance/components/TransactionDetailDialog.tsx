@@ -4,7 +4,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Button } from '@/components/ui/button'
 import { formatDateTime, formatCurrency } from '@/lib/dateUtils'
 import { X, Calendar, Tag, CreditCard, User, Mail, ShieldAlert } from 'lucide-react'
-import { CancelTransactionDialog } from './CancelTransactionDialog'
 import { useState } from 'react'
 
 interface Transaction {
@@ -15,6 +14,7 @@ interface Transaction {
     description: string | null
     date: Date
     cancelledAt: Date | null
+    cancellationReason: string | null
     category: {
         name: string
         parent: { name: string } | null
@@ -33,14 +33,16 @@ interface Props {
     transaction: Transaction
     isOpen: boolean
     onClose: () => void
+    onCancel?: () => void
     canCancel: boolean
 }
 
-export function TransactionDetailDialog({ transaction, isOpen, onClose, canCancel }: Props) {
-    const [showCancelDialog, setShowCancelDialog] = useState(false)
+export function TransactionDetailDialog({ transaction, isOpen, onClose, onCancel, canCancel }: Props) {
 
     const handleCancelClick = () => {
-        setShowCancelDialog(true)
+        if (onCancel) {
+            onCancel()
+        }
     }
 
     const isIncome = transaction.type === 'INCOME'
@@ -71,11 +73,16 @@ export function TransactionDetailDialog({ transaction, isOpen, onClose, canCance
                                 {isIncome ? 'Ingreso' : 'Gasto'}
                             </div>
                             {transaction.cancelledAt && (
-                                <div className="mt-2">
+                                <div className="mt-4 space-y-2">
                                     <span className="inline-flex items-center gap-1 rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 dark:bg-red-900/20 dark:text-red-400">
                                         <ShieldAlert className="h-3 w-3" />
                                         Transacción Anulada
                                     </span>
+                                    {transaction.cancellationReason && (
+                                        <p className="text-sm text-red-600 dark:text-red-400 max-w-xs mx-auto">
+                                            "{transaction.cancellationReason}"
+                                        </p>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -157,15 +164,6 @@ export function TransactionDetailDialog({ transaction, isOpen, onClose, canCance
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-
-            <CancelTransactionDialog
-                transaction={transaction}
-                isOpen={showCancelDialog}
-                onClose={() => {
-                    setShowCancelDialog(false)
-                    onClose() // Close detail modal if transaction is cancelled (optional, but good UX if list updates)
-                }}
-            />
         </>
     )
 }
