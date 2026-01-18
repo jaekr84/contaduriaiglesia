@@ -34,7 +34,7 @@ interface ComboboxProps {
     className?: string; // Expecting things like "h-9 w-full"
 }
 
-export function Combobox({
+export const Combobox = React.forwardRef<HTMLInputElement, ComboboxProps>(({
     options,
     value,
     onChange,
@@ -43,7 +43,7 @@ export function Combobox({
     emptyText = "No results found.",
     disabled = false,
     className
-}: ComboboxProps) {
+}, ref) => {
     const [open, setOpen] = React.useState(false)
     const [query, setQuery] = React.useState("")
 
@@ -86,6 +86,7 @@ export function Combobox({
                 <PopoverTrigger asChild>
                     <div className="relative">
                         <CommandPrimitive.Input
+                            ref={ref}
                             placeholder={placeholder}
                             value={query}
                             onValueChange={(val) => {
@@ -176,4 +177,5 @@ export function Combobox({
             </Popover>
         </Command>
     )
-}
+})
+Combobox.displayName = "Combobox"

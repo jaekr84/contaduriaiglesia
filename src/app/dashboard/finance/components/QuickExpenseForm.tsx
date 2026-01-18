@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useTransition } from 'react'
+import { useState, useRef, useTransition, useEffect } from 'react'
 import { createTransaction } from '../actions'
 import { Category, Member } from '@prisma/client'
 import { Loader2, Plus, ArrowDownCircle } from 'lucide-react'
@@ -16,15 +16,26 @@ interface QuickExpenseFormProps {
     userRole?: string
 }
 
-export function QuickExpenseForm({ categories, userRole }: QuickExpenseFormProps) {
+export function QuickExpenseForm({ categories: initialCategories, userRole }: QuickExpenseFormProps) {
     const [isPending, startTransition] = useTransition()
     const [currency, setCurrency] = useState<'ARS' | 'USD'>('ARS')
     const [selectedParentId, setSelectedParentId] = useState('')
     const [selectedSubId, setSelectedSubId] = useState('')
     const [resetKey, setResetKey] = useState(0)
 
+    // Local categories state for immediate updates
+    const [categories, setCategories] = useState(initialCategories)
+
+    // Sync with props if they change
+    useEffect(() => {
+        setCategories(initialCategories)
+    }, [initialCategories])
+
     const formRef = useRef<HTMLFormElement>(null)
     const firstInputRef = useRef<HTMLInputElement>(null)
+    const subcategoryInputRef = useRef<HTMLInputElement>(null)
+    const subcategoryTriggerRef = useRef<HTMLButtonElement>(null)
+    const descriptionInputRef = useRef<HTMLInputElement>(null)
     const router = useRouter()
 
     const amountInputRef = useRef<HTMLInputElement>(null)
@@ -38,6 +49,32 @@ export function QuickExpenseForm({ categories, userRole }: QuickExpenseFormProps
             formRef.current?.requestSubmit()
         }
     })
+
+    const handleCategoryCreated = (newCategory: Category) => {
+        setCategories(prev => [...prev, newCategory])
+
+        if (newCategory.parentId) {
+            // It's a subcategory
+            setSelectedSubId(newCategory.id)
+            if (newCategory.parentId !== selectedParentId) {
+                setSelectedParentId(newCategory.parentId)
+            }
+            // UX: Focus Description after creating Subcategory
+            setTimeout(() => {
+                descriptionInputRef.current?.focus()
+            }, 200)
+        } else {
+            // It's a parent category
+            setSelectedParentId(newCategory.id)
+            setSelectedSubId('')
+
+            // UX: If we just created a parent, it has NO subcategories yet.
+            // So the Combobox is disabled. We must focus the "+" button to allow creating a subcategory.
+            setTimeout(() => {
+                subcategoryTriggerRef.current?.focus()
+            }, 200)
+        }
+    }
 
     const handleSubmit = (formData: FormData) => {
         formData.set('type', 'EXPENSE')
@@ -86,7 +123,13 @@ export function QuickExpenseForm({ categories, userRole }: QuickExpenseFormProps
 
     // Filter categories by type EXPENSE
     const filteredCategories = categories.filter(c => c.type === 'EXPENSE')
-    const parentCategories = filteredCategories.filter(c => !c.parentId)
+
+    // Sorter for A-Z and Korean (ㄱ-ㅎ)
+    const sorter = new Intl.Collator(['ko', 'es', 'en'], { sensitivity: 'base', numeric: true })
+
+    const parentCategories = filteredCategories
+        .filter(c => !c.parentId)
+        .sort((a, b) => sorter.compare(a.name, b.name))
 
     const formId = "quick-expense-form"
 
@@ -169,6 +212,7 @@ export function QuickExpenseForm({ categories, userRole }: QuickExpenseFormProps
                             <CreateCategoryDialog
                                 categories={categories}
                                 type="EXPENSE"
+                                onCategoryCreated={handleCategoryCreated}
                                 trigger={
                                     <button type="button" className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-zinc-200 bg-transparent text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 disabled:pointer-events-none disabled:opacity-50 dark:border-zinc-800 dark:text-zinc-50 dark:hover:bg-zinc-800" title="Nueva Categoría">
                                         <Plus className="h-4 w-4" />
@@ -183,9 +227,11 @@ export function QuickExpenseForm({ categories, userRole }: QuickExpenseFormProps
                         <div className="flex gap-2">
                             <div className="relative flex-1">
                                 <Combobox
+                                    ref={subcategoryInputRef}
                                     options={[
                                         ...filteredCategories
                                             .filter(c => c.parentId === selectedParentId)
+                                            .sort((a, b) => sorter.compare(a.name, b.name))
                                             .map(sub => ({ value: sub.id, label: sub.name }))
                                     ]}
                                     value={selectedSubId}
@@ -201,8 +247,10 @@ export function QuickExpenseForm({ categories, userRole }: QuickExpenseFormProps
                                 categories={categories}
                                 fixedParentId={selectedParentId}
                                 type="EXPENSE"
+                                onCategoryCreated={handleCategoryCreated}
                                 trigger={
                                     <button
+                                        ref={subcategoryTriggerRef}
                                         type="button"
                                         disabled={!selectedParentId}
                                         className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-zinc-200 bg-transparent text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 disabled:pointer-events-none disabled:opacity-50 dark:border-zinc-800 dark:text-zinc-50 dark:hover:bg-zinc-800"
@@ -220,6 +268,7 @@ export function QuickExpenseForm({ categories, userRole }: QuickExpenseFormProps
                 <div className="space-y-1.5">
                     <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Nota / Detalle / Número de factura</label>
                     <input
+                        ref={descriptionInputRef}
                         name="description"
                         placeholder="Detalle del gasto..."
                         className="flex h-9 w-full rounded-md border border-zinc-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:text-zinc-300 dark:placeholder:text-zinc-400 dark:focus-visible:ring-zinc-300"
@@ -233,7 +282,7 @@ export function QuickExpenseForm({ categories, userRole }: QuickExpenseFormProps
                         className="w-full inline-flex h-9 items-center justify-center rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-50 shadow transition-colors hover:bg-zinc-900/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 disabled:pointer-events-none disabled:opacity-50 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-50/90 dark:focus-visible:ring-zinc-300"
                     >
                         {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
-                        Registrar Gasto (F4)
+                        Registrar Gasto (F4) / Enter
                     </button>
                 </div>
             </form>
