@@ -6,6 +6,7 @@ import { Category } from '@prisma/client'
 import { Loader2, Plus, ArrowUpCircle } from 'lucide-react'
 import { CreateCategoryDialog } from './CreateCategoryDialog'
 import { MoneyInput } from './MoneyInput'
+import { Combobox } from '@/components/ui/combobox'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { useKeyboardShortcut } from '@/hooks/use-keyboard-shortcut'
@@ -32,6 +33,12 @@ export function QuickIncomeForm({ categories, userRole }: QuickIncomeFormProps) 
         amountInputRef.current?.focus()
     })
 
+    useKeyboardShortcut('F4', () => {
+        if (formRef.current?.contains(document.activeElement)) {
+            formRef.current?.requestSubmit()
+        }
+    })
+
     const handleSubmit = (formData: FormData) => {
         formData.set('type', 'INCOME')
         formData.set('currency', currency)
@@ -53,16 +60,27 @@ export function QuickIncomeForm({ categories, userRole }: QuickIncomeFormProps) 
                 toast.error(result.error)
             } else {
                 toast.success('Ingreso registrado')
-                formRef.current?.reset()
-                setCurrency('ARS')
+                toast.success('Ingreso registrado')
+
+                // Reset fields but keep Date and Currency (Sticky values)
+                const form = formRef.current
+                if (form) {
+                    // Manually clear description
+                    const descriptionInput = form.elements.namedItem('description') as HTMLInputElement
+                    if (descriptionInput) descriptionInput.value = ''
+                }
+
+                // Reset categories
                 setSelectedParentId('')
                 setSelectedSubId('')
+
+                // Reset amount (MoneyInput)
                 setResetKey(prev => prev + 1)
 
-                // Focus first input for next entry if needed, but maybe less critical for cards
-                // setTimeout(() => {
-                //     firstInputRef.current?.focus()
-                // }, 100)
+                // Smart Focus: Focus amount input to continue rapid entry
+                setTimeout(() => {
+                    amountInputRef.current?.focus()
+                }, 100)
 
                 router.refresh()
             }
@@ -139,22 +157,17 @@ export function QuickIncomeForm({ categories, userRole }: QuickIncomeFormProps) 
                         <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Categoría</label>
                         <div className="flex gap-2">
                             <div className="relative flex-1">
-                                <select
-                                    required
+                                <Combobox
+                                    options={parentCategories.map(c => ({ value: c.id, label: c.name }))}
                                     value={selectedParentId}
-                                    onChange={(e) => {
-                                        setSelectedParentId(e.target.value)
+                                    onChange={(val) => {
+                                        setSelectedParentId(val)
                                         setSelectedSubId('')
                                     }}
-                                    className="flex h-9 w-full rounded-md border border-zinc-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:text-zinc-50 dark:focus-visible:ring-zinc-300 appearance-none"
-                                >
-                                    <option value="">Seleccionar...</option>
-                                    {parentCategories.map(parent => (
-                                        <option key={parent.id} value={parent.id}>
-                                            {parent.name}
-                                        </option>
-                                    ))}
-                                </select>
+                                    placeholder="Seleccionar..."
+                                    searchPlaceholder="Buscar categoría..."
+                                    className="h-9"
+                                />
                             </div>
                             <CreateCategoryDialog
                                 categories={categories}
@@ -172,21 +185,20 @@ export function QuickIncomeForm({ categories, userRole }: QuickIncomeFormProps) 
                         <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Subcategoría</label>
                         <div className="flex gap-2">
                             <div className="relative flex-1">
-                                <select
+                                <Combobox
+                                    options={[
+                                        ...filteredCategories
+                                            .filter(c => c.parentId === selectedParentId)
+                                            .map(sub => ({ value: sub.id, label: sub.name }))
+                                    ]}
                                     value={selectedSubId}
-                                    onChange={(e) => setSelectedSubId(e.target.value)}
+                                    onChange={setSelectedSubId}
                                     disabled={!selectedParentId || !filteredCategories.some(c => c.parentId === selectedParentId)}
-                                    className="flex h-9 w-full rounded-md border border-zinc-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:text-zinc-50 dark:focus-visible:ring-zinc-300 appearance-none"
-                                >
-                                    <option value="">General</option>
-                                    {filteredCategories
-                                        .filter(c => c.parentId === selectedParentId)
-                                        .map(sub => (
-                                            <option key={sub.id} value={sub.id}>
-                                                {sub.name}
-                                            </option>
-                                        ))}
-                                </select>
+                                    placeholder="General"
+                                    searchPlaceholder="Buscar subcategoría..."
+                                    emptyText="Sin subcategorías"
+                                    className="h-9"
+                                />
                             </div>
                             <CreateCategoryDialog
                                 categories={categories}
@@ -224,7 +236,7 @@ export function QuickIncomeForm({ categories, userRole }: QuickIncomeFormProps) 
                         className="w-full inline-flex h-9 items-center justify-center rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-50 shadow transition-colors hover:bg-zinc-900/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 disabled:pointer-events-none disabled:opacity-50 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-50/90 dark:focus-visible:ring-zinc-300"
                     >
                         {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
-                        Registrar Ingreso
+                        Registrar Ingreso (F4)
                     </button>
                 </div>
             </form>

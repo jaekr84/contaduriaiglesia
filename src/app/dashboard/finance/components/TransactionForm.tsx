@@ -5,20 +5,18 @@ import { Plus, X, Loader2, Save } from 'lucide-react'
 import { createTransaction } from '../actions'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import { Category, Member } from '@prisma/client'
+import { Category } from '@prisma/client'
 import { MoneyInput } from './MoneyInput'
 import { CreateCategoryDialog } from './CreateCategoryDialog'
-import { CreateMemberDialog } from '../../members/components/CreateMemberDialog'
 
 interface TransactionFormProps {
     categories: Category[]
-    members: Member[]
     onSuccess?: () => void
     onCancel?: () => void
     isModal?: boolean
 }
 
-export function TransactionForm({ categories, members, onSuccess, onCancel, isModal = false }: TransactionFormProps) {
+export function TransactionForm({ categories, onSuccess, onCancel, isModal = false }: TransactionFormProps) {
     const [isPending, startTransition] = useTransition()
     const [type, setType] = useState<'INCOME' | 'EXPENSE'>('INCOME')
     const [selectedParentId, setSelectedParentId] = useState('')
@@ -210,34 +208,7 @@ export function TransactionForm({ categories, members, onSuccess, onCancel, isMo
                         />
                     </div>
 
-                    {/* Member */}
-                    <div className="w-full lg:w-40 space-y-1">
-                        <div className="flex items-center gap-2">
-                            <label className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Miembro</label>
-                            <CreateMemberDialog
-                                trigger={
-                                    <button
-                                        type="button"
-                                        disabled={type !== 'INCOME'}
-                                        className="text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full p-0.5 transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed"
-                                        title="Nuevo Miembro"
-                                    >
-                                        <Plus className="h-3 w-3" />
-                                    </button>
-                                }
-                            />
-                        </div>
-                        <select
-                            name="memberId"
-                            disabled={type !== 'INCOME'}
-                            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-950"
-                        >
-                            <option value="">Anónimo</option>
-                            {members.map(m => (
-                                <option key={m.id} value={m.id}>{m.lastName}, {m.firstName}</option>
-                            ))}
-                        </select>
-                    </div>
+
 
                     <div className="hidden">
                         <input type="hidden" name="paymentMethod" value="CASH" />

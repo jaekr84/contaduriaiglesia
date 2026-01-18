@@ -2,26 +2,18 @@
 
 import { useState } from 'react'
 import { Plus, X } from 'lucide-react'
-import { Category, Member } from '@prisma/client'
+import { Category } from '@prisma/client'
 import { TransactionForm } from './TransactionForm'
 
 interface Props {
     categories: Category[]
-    members: Member[]
 }
 
-export function CreateTransactionDialog({ categories, members }: Props) {
+export function CreateTransactionDialog({ categories }: Props) {
     const [isOpen, setIsOpen] = useState(false)
 
     return (
         <>
-            <button
-                onClick={() => setIsOpen(true)}
-                className="inline-flex items-center justify-center gap-2 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-50 shadow hover:bg-zinc-900/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-            >
-                <Plus className="h-4 w-4" />
-                Nuevo Movimiento
-            </button>
 
             {isOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200">
@@ -38,7 +30,6 @@ export function CreateTransactionDialog({ categories, members }: Props) {
 
                         <TransactionForm
                             categories={categories}
-                            members={members}
                             onSuccess={() => setIsOpen(false)}
                             onCancel={() => setIsOpen(false)}
                             isModal={true}
