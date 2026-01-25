@@ -10,6 +10,7 @@ import { Combobox } from '@/components/ui/combobox'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { useKeyboardShortcut } from '@/hooks/use-keyboard-shortcut'
+import { getTodayArgentinaISO } from '@/lib/dateUtils'
 
 interface QuickIncomeFormProps {
     categories: Category[]
@@ -21,6 +22,7 @@ export function QuickIncomeForm({ categories: initialCategories, userRole }: Qui
     const [currency, setCurrency] = useState<'ARS' | 'USD'>('ARS')
     const [selectedParentId, setSelectedParentId] = useState('')
     const [selectedSubId, setSelectedSubId] = useState('')
+    const [date, setDate] = useState(getTodayArgentinaISO())
     const [resetKey, setResetKey] = useState(0)
 
     // Local categories state for immediate updates
@@ -90,7 +92,7 @@ export function QuickIncomeForm({ categories: initialCategories, userRole }: Qui
             } else {
                 toast.success('Ingreso registrado')
 
-                // Reset fields but keep Date and Currency (Sticky values)
+                // Reset fields but keep Date (Sticky value)
                 const form = formRef.current
                 if (form) {
                     // Manually clear description
@@ -148,7 +150,8 @@ export function QuickIncomeForm({ categories: initialCategories, userRole }: Qui
                             name="date"
                             type="date"
                             required
-                            defaultValue={new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Argentina/Buenos_Aires' })}
+                            value={date}
+                            onChange={(e) => setDate(e.target.value)}
                             className="w-full h-9 rounded-md border border-zinc-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:text-zinc-50 dark:focus-visible:ring-zinc-300"
                         />
                     </div>

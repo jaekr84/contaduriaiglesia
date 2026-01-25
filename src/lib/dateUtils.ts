@@ -50,3 +50,10 @@ export const getStartOfYearArgentina = (year: number): Date => {
 export const getEndOfYearArgentina = (year: number): Date => {
     return new Date(`${year + 1}-01-01T00:00:00-03:00`)
 }
+/**
+ * Returns today's date in YYYY-MM-DD format for Argentina timezone.
+ * Useful for <input type="date"> defaultValue or value.
+ */
+export const getTodayArgentinaISO = (): string => {
+    return new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Argentina/Buenos_Aires' })
+}
