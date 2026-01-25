@@ -123,8 +123,18 @@ export async function getCategories() {
     // Fetch all categories including subcategories
     return await prisma.category.findMany({
         where: { organizationId: profile.organizationId },
-        orderBy: { name: 'asc' },
-        include: { subcategories: true }
+        orderBy: [
+            { order: 'asc' },
+            { name: 'asc' }
+        ],
+        include: {
+            subcategories: {
+                orderBy: [
+                    { order: 'asc' },
+                    { name: 'asc' }
+                ]
+            }
+        }
     })
 }
 
@@ -306,16 +316,31 @@ export async function createCategory(formData: FormData) {
     }
 
     try {
-        const newCategories = await prisma.$transaction(
-            names.map(name => prisma.category.create({
-                data: {
-                    name,
+        const newCategories = await prisma.$transaction(async (tx) => {
+            // Get current max order to append new categories at the end
+            const maxOrder = await tx.category.aggregate({
+                where: {
+                    organizationId: profile.organizationId,
                     type,
-                    parentId: normalizedParentId,
-                    organizationId: profile.organizationId
-                }
-            }))
-        )
+                    parentId: normalizedParentId
+                },
+                _max: { order: true }
+            })
+
+            const baseOrder = (maxOrder._max.order ?? -1) + 1
+
+            return Promise.all(
+                names.map((name, index) => tx.category.create({
+                    data: {
+                        name,
+                        type,
+                        parentId: normalizedParentId,
+                        organizationId: profile.organizationId,
+                        order: baseOrder + index
+                    }
+                }))
+            )
+        })
         revalidatePath('/dashboard/finance')
         revalidatePath('/dashboard/finance/categories')
         return { success: true, category: newCategories[0] }
@@ -702,5 +727,62 @@ export async function cancelTransaction(transactionId: string, reason: string) {
     } catch (error) {
         console.error('Error cancelling transaction:', error)
         return { error: 'Error al anular la transacción' }
+    }
+}
+
+export async function reorderCategories(ids: string[]) {
+    try {
+        const profile = await requireProfile()
+
+        if (!['ADMIN', 'TREASURER'].includes(profile.role)) {
+            return { error: 'No autorizado' }
+        }
+
+        // Bulk update in a transaction
+        await prisma.$transaction(
+            ids.map((id, index) =>
+                prisma.category.update({
+                    where: { id, organizationId: profile.organizationId },
+                    data: { order: index }
+                })
+            )
+        )
+
+        revalidatePath('/dashboard/finance')
+        revalidatePath('/dashboard/finance/categories')
+        return { success: true }
+    } catch (error) {
+        console.error('Error reordering categories:', error)
+        return { error: 'Error al reordenar categorías' }
+    }
+}
+
+export async function deleteTransaction(id: string) {
+    const profile = await requireProfile()
+
+    if (profile.role !== 'ADMIN') {
+        return { error: 'No autorizado. Solo los administradores pueden eliminar registros permanentemente.' }
+    }
+
+    try {
+        const transaction = await prisma.transaction.findUnique({
+            where: { id, organizationId: profile.organizationId },
+            include: { category: true }
+        })
+
+        if (!transaction) return { error: 'Transacción no encontrada' }
+
+        await prisma.transaction.delete({
+            where: { id, organizationId: profile.organizationId }
+        })
+
+        revalidatePath('/dashboard/finance')
+        revalidatePath('/dashboard/balance')
+        revalidatePath('/dashboard/annual-summary')
+
+        return { success: true }
+    } catch (error) {
+        console.error('Error deleting transaction:', error)
+        return { error: 'Error al eliminar la transacción permanentemente' }
     }
 }

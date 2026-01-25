@@ -2,11 +2,12 @@
 
 import { useState } from 'react'
 import { formatDateTime, formatCurrency } from '@/lib/dateUtils'
-import { X, Plus, Info } from 'lucide-react'
 import { CancelTransactionDialog } from './CancelTransactionDialog'
+import { DeleteTransactionDialog } from './DeleteTransactionDialog'
 import { TransactionDetailDialog } from './TransactionDetailDialog'
 
 import { Category, Member } from '@prisma/client'
+import { Trash2, X, Info } from 'lucide-react'
 import { CreateCategoryDialog } from './CreateCategoryDialog'
 
 interface Transaction {
@@ -41,9 +42,11 @@ interface Props {
 
 export function TransactionsTable({ transactions, userRole, categories, variant = 'default' }: Props) {
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
+    const [deleteTransactionData, setDeleteTransactionData] = useState<Transaction | null>(null)
     const [detailTransaction, setDetailTransaction] = useState<Transaction | null>(null)
 
     const canCancel = userRole === 'ADMIN' || userRole === 'TREASURER'
+    const isAdmin = userRole === 'ADMIN'
     const isCompact = variant === 'compact'
 
     return (
@@ -139,22 +142,37 @@ export function TransactionsTable({ transactions, userRole, categories, variant 
                                                 </td>
                                                 {canCancel && (
                                                     <td className="p-4 align-middle text-center">
-                                                        {t.cancelledAt ? (
-                                                            <span className="inline-flex items-center justify-center rounded-md px-2 py-1 text-xs font-medium text-red-700 dark:text-red-300">
-                                                                Anulada
-                                                            </span>
-                                                        ) : (
-                                                            <button
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation()
-                                                                    setSelectedTransaction(t)
-                                                                }}
-                                                                className="inline-flex items-center justify-center rounded-md p-2 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors"
-                                                                title="Anular transacción"
-                                                            >
-                                                                <X className="h-4 w-4" />
-                                                            </button>
-                                                        )}
+                                                        <div className="flex items-center justify-center gap-1">
+                                                            {t.cancelledAt ? (
+                                                                <span className="inline-flex items-center justify-center rounded-md px-2 py-1 text-xs font-medium text-red-700 dark:text-red-300">
+                                                                    Anulada
+                                                                </span>
+                                                            ) : (
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation()
+                                                                        setSelectedTransaction(t)
+                                                                    }}
+                                                                    className="inline-flex items-center justify-center rounded-md p-2 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors"
+                                                                    title="Anular transacción"
+                                                                >
+                                                                    <X className="h-4 w-4" />
+                                                                </button>
+                                                            )}
+
+                                                            {isAdmin && (
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation()
+                                                                        setDeleteTransactionData(t)
+                                                                    }}
+                                                                    className="inline-flex items-center justify-center rounded-md p-2 text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                                                                    title="Eliminar permanentemente (Solo Admin)"
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </button>
+                                                            )}
+                                                        </div>
                                                     </td>
                                                 )}
                                             </>
@@ -174,7 +192,9 @@ export function TransactionsTable({ transactions, userRole, categories, variant 
                     isOpen={!!detailTransaction}
                     onClose={() => setDetailTransaction(null)}
                     onCancel={() => setSelectedTransaction(detailTransaction)}
+                    onDelete={() => setDeleteTransactionData(detailTransaction)}
                     canCancel={canCancel}
+                    isAdmin={isAdmin}
                 />
             )}
 
@@ -185,6 +205,18 @@ export function TransactionsTable({ transactions, userRole, categories, variant 
                     onClose={() => setSelectedTransaction(null)}
                     onSuccess={() => {
                         setSelectedTransaction(null)
+                        setDetailTransaction(null)
+                    }}
+                />
+            )}
+
+            {deleteTransactionData && (
+                <DeleteTransactionDialog
+                    transaction={deleteTransactionData}
+                    isOpen={!!deleteTransactionData}
+                    onClose={() => setDeleteTransactionData(null)}
+                    onSuccess={() => {
+                        setDeleteTransactionData(null)
                         setDetailTransaction(null)
                     }}
                 />

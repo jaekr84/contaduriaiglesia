@@ -3,7 +3,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { formatDateTime, formatCurrency } from '@/lib/dateUtils'
-import { X, Calendar, Tag, CreditCard, User, Mail, ShieldAlert } from 'lucide-react'
+import { X, Calendar, Tag, CreditCard, User, Mail, ShieldAlert, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
 interface Transaction {
@@ -34,10 +34,12 @@ interface Props {
     isOpen: boolean
     onClose: () => void
     onCancel?: () => void
+    onDelete?: () => void
     canCancel: boolean
+    isAdmin?: boolean
 }
 
-export function TransactionDetailDialog({ transaction, isOpen, onClose, onCancel, canCancel }: Props) {
+export function TransactionDetailDialog({ transaction, isOpen, onClose, onCancel, onDelete, canCancel, isAdmin }: Props) {
 
     const handleCancelClick = () => {
         if (onCancel) {
@@ -159,6 +161,16 @@ export function TransactionDetailDialog({ transaction, isOpen, onClose, onCancel
                                 className="w-full sm:w-auto"
                             >
                                 Anular Transacción
+                            </Button>
+                        )}
+                        {isAdmin && (
+                            <Button
+                                variant="ghost"
+                                onClick={onDelete}
+                                className="w-full sm:w-auto text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Borrar Permanente
                             </Button>
                         )}
                     </DialogFooter>

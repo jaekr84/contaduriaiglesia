@@ -125,7 +125,7 @@ export function QuickIncomeForm({ categories: initialCategories, userRole }: Qui
 
     const parentCategories = filteredCategories
         .filter(c => !c.parentId)
-        .sort((a, b) => sorter.compare(a.name, b.name))
+        .sort((a, b) => (a as any).order - (b as any).order)
 
     const formId = "quick-income-form"
 
@@ -228,7 +228,7 @@ export function QuickIncomeForm({ categories: initialCategories, userRole }: Qui
                                     options={[
                                         ...filteredCategories
                                             .filter(c => c.parentId === selectedParentId)
-                                            .sort((a, b) => sorter.compare(a.name, b.name))
+                                            .sort((a, b) => (a as any).order - (b as any).order)
                                             .map(sub => ({ value: sub.id, label: sub.name }))
                                     ]}
                                     value={selectedSubId}

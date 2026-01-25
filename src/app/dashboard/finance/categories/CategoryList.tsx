@@ -1,8 +1,8 @@
 'use client'
 
-import { deleteCategory, bulkDeleteCategories, updateCategory, createCategory } from '../actions'
-import { Trash2, Loader2, ChevronRight, ChevronDown, Edit2, Check, X, Plus, CornerDownRight } from 'lucide-react'
-import { useState, useTransition, useRef } from 'react'
+import { deleteCategory, bulkDeleteCategories, updateCategory, createCategory, reorderCategories } from '../actions'
+import { Trash2, Loader2, ChevronRight, ChevronDown, Edit2, Check, X, Plus, CornerDownRight, ArrowUp, ArrowDown } from 'lucide-react'
+import { useState, useTransition, useRef, useEffect } from 'react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { Category, TransactionType } from '@prisma/client'
@@ -14,9 +14,17 @@ export function CategoryList({ categories }: { categories: CategoryWithChildren[
     const [isEditMode, setIsEditMode] = useState(false)
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
     const [isBulkDeleting, startBulkDelete] = useTransition()
+    const [isReordering, startReorder] = useTransition()
 
-    // Filter root categories
-    const rootCategories = categories.filter(c => !c.parentId)
+    // Internal state for immediate UI update during reordering
+    const [localCategories, setLocalCategories] = useState(categories)
+
+    // Sync local state when props change
+    useEffect(() => {
+        setLocalCategories(categories)
+    }, [categories])
+
+    const rootCategories = localCategories.filter(c => !c.parentId)
 
     const toggleSelect = (id: string) => {
         const newSet = new Set(selectedIds)
@@ -36,6 +44,27 @@ export function CategoryList({ categories }: { categories: CategoryWithChildren[
                 setIsEditMode(false)
                 router.refresh()
             }
+        })
+    }
+
+    const moveCategory = (id: string, direction: 'up' | 'down', parentId: string | null = null) => {
+        const listToSort = localCategories.filter(c => c.parentId === parentId)
+        const index = listToSort.findIndex(c => c.id === id)
+        if (index === -1) return
+
+        const newIndex = direction === 'up' ? index - 1 : index + 1
+        if (newIndex < 0 || newIndex >= listToSort.length) return
+
+        const newList = [...listToSort]
+        const [moved] = newList.splice(index, 1)
+        newList.splice(newIndex, 0, moved)
+
+        const orderedIds = newList.map(c => c.id)
+
+        startReorder(async () => {
+            const result = await reorderCategories(orderedIds)
+            if (result?.error) toast.error(result.error)
+            else router.refresh()
         })
     }
 
@@ -71,7 +100,7 @@ export function CategoryList({ categories }: { categories: CategoryWithChildren[
                 </div>
             ) : (
                 <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
-                    {rootCategories.map((cat) => (
+                    {rootCategories.map((cat, index) => (
                         <CategoryItem
                             key={cat.id}
                             category={cat}
@@ -81,6 +110,10 @@ export function CategoryList({ categories }: { categories: CategoryWithChildren[
                             onToggle={() => toggleSelect(cat.id)}
                             selectedIds={selectedIds}
                             onToggleId={toggleSelect}
+                            onMove={(dir) => moveCategory(cat.id, dir, null)}
+                            isFirst={index === 0}
+                            isLast={index === rootCategories.length - 1}
+                            isReordering={isReordering}
                         />
                     ))}
                 </ul>
@@ -96,7 +129,11 @@ function CategoryItem({
     isSelected,
     onToggle,
     selectedIds,
-    onToggleId
+    onToggleId,
+    onMove,
+    isFirst,
+    isLast,
+    isReordering
 }: {
     category: CategoryWithChildren,
     hasChildren: boolean,
@@ -104,13 +141,36 @@ function CategoryItem({
     isSelected: boolean,
     onToggle: () => void,
     selectedIds: Set<string>,
-    onToggleId: (id: string) => void
+    onToggleId: (id: string) => void,
+    onMove: (direction: 'up' | 'down') => void,
+    isFirst: boolean,
+    isLast: boolean,
+    isReordering: boolean
 }) {
     const [isExpanded, setIsExpanded] = useState(false)
     const [isAddingSub, setIsAddingSub] = useState(false)
     const children = category.subcategories || []
 
     const toggleExpand = () => setIsExpanded(!isExpanded)
+    const router = useRouter()
+
+    const moveSub = async (id: string, direction: 'up' | 'down') => {
+        // Sort children by current order to ensure consistency
+        const listToSort = [...children].sort((a, b) => (a as any).order - (b as any).order)
+        const index = listToSort.findIndex(c => c.id === id)
+        if (index === -1) return
+
+        const newIndex = direction === 'up' ? index - 1 : index + 1
+        if (newIndex < 0 || newIndex >= listToSort.length) return
+
+        const newList = [...listToSort]
+        const [moved] = newList.splice(index, 1)
+        newList.splice(newIndex, 0, moved)
+
+        const result = await reorderCategories(newList.map(c => c.id))
+        if (result?.error) toast.error(result.error)
+        else router.refresh()
+    }
 
     return (
         <li className="flex flex-col group">
@@ -138,29 +198,51 @@ function CategoryItem({
                     <EditableName category={category} isEditMode={isEditMode} />
                 </div>
 
-                {/* Actions (Add Subcategory) */}
-                {!isEditMode && (
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                        <button
-                            onClick={() => {
-                                setIsExpanded(true)
-                                setIsAddingSub(true)
-                            }}
-                            className="p-1 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-50 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded"
-                            title="Agregar Subcategoría"
-                        >
-                            <Plus className="h-4 w-4" />
-                        </button>
-                    </div>
-                )}
+                {/* Actions (Add Subcategory & Reorder) */}
+                <div className="flex items-center gap-1">
+                    {!isEditMode && (
+                        <>
+                            <div className="flex items-center group-hover:opacity-100 opacity-0 transition-opacity">
+                                <button
+                                    onClick={() => onMove('up')}
+                                    disabled={isFirst || isReordering}
+                                    className="p-1 text-zinc-400 hover:text-zinc-900 disabled:opacity-30"
+                                    title="Mover arriba"
+                                >
+                                    <ArrowUp className="h-3.5 w-3.5" />
+                                </button>
+                                <button
+                                    onClick={() => onMove('down')}
+                                    disabled={isLast || isReordering}
+                                    className="p-1 text-zinc-400 hover:text-zinc-900 disabled:opacity-30"
+                                    title="Mover abajo"
+                                >
+                                    <ArrowDown className="h-3.5 w-3.5" />
+                                </button>
+                            </div>
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity ml-1">
+                                <button
+                                    onClick={() => {
+                                        setIsExpanded(true)
+                                        setIsAddingSub(true)
+                                    }}
+                                    className="p-1 text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-50 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded"
+                                    title="Agregar Subcategoría"
+                                >
+                                    <Plus className="h-4 w-4" />
+                                </button>
+                            </div>
+                        </>
+                    )}
+                </div>
             </div>
 
             {/* Render Children (Expanded) */}
             {(isExpanded || isAddingSub) && (
                 <ul className="bg-zinc-50/30 dark:bg-zinc-900/10 border-l-2 border-zinc-100 dark:border-zinc-800 ml-5 pl-1">
                     {/* Existing Children */}
-                    {children.map(child => (
-                        <div key={child.id} className="flex items-center justify-between p-2 pl-3 text-sm hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 rounded-r-md">
+                    {children.map((child, index) => (
+                        <div key={child.id} className="flex items-center justify-between p-2 pl-3 text-sm hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 rounded-r-md group/sub">
                             <div className="flex items-center gap-2 flex-1 text-zinc-600 dark:text-zinc-400">
                                 {isEditMode && (
                                     <input
@@ -173,6 +255,24 @@ function CategoryItem({
                                 <CornerDownRight className="h-3 w-3 opacity-40" />
                                 <EditableName category={child} isEditMode={isEditMode} />
                             </div>
+                            {!isEditMode && (
+                                <div className="flex items-center opacity-0 group-hover/sub:opacity-100 transition-opacity">
+                                    <button
+                                        onClick={() => moveSub(child.id, 'up')}
+                                        disabled={index === 0}
+                                        className="p-1 text-zinc-400 hover:text-zinc-600 disabled:opacity-30"
+                                    >
+                                        <ArrowUp className="h-3 w-3" />
+                                    </button>
+                                    <button
+                                        onClick={() => moveSub(child.id, 'down')}
+                                        disabled={index === children.length - 1}
+                                        className="p-1 text-zinc-400 hover:text-zinc-600 disabled:opacity-30"
+                                    >
+                                        <ArrowDown className="h-3 w-3" />
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     ))}
 

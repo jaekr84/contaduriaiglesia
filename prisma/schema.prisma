@@ -69,6 +69,7 @@ model Category {
   organization   Organization    @relation(fields: [organizationId], references: [id])
   transactions   Transaction[]
   isSystem       Boolean         @default(false)
+  order          Int             @default(0)
 
   parentId       String?
   parent         Category?       @relation("CategoryHierarchy", fields: [parentId], references: [id])

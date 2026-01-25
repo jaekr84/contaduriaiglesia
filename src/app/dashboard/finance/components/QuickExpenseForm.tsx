@@ -130,7 +130,7 @@ export function QuickExpenseForm({ categories: initialCategories, userRole }: Qu
 
     const parentCategories = filteredCategories
         .filter(c => !c.parentId)
-        .sort((a, b) => sorter.compare(a.name, b.name))
+        .sort((a, b) => (a as any).order - (b as any).order)
 
     const formId = "quick-expense-form"
 
@@ -233,7 +233,7 @@ export function QuickExpenseForm({ categories: initialCategories, userRole }: Qu
                                     options={[
                                         ...filteredCategories
                                             .filter(c => c.parentId === selectedParentId)
-                                            .sort((a, b) => sorter.compare(a.name, b.name))
+                                            .sort((a, b) => (a as any).order - (b as any).order)
                                             .map(sub => ({ value: sub.id, label: sub.name }))
                                     ]}
                                     value={selectedSubId}
