@@ -9,21 +9,10 @@ import { Button } from '@/components/ui/button'
 import { Trash2, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 
-interface Transaction {
-    id: string
-    amount: number
-    currency: string
-    type: string
-    description: string | null
-    date: Date
-    category: {
-        name: string
-        parent: { name: string } | null
-    }
-}
+import { TransactionWithRelations } from '../actions'
 
 interface Props {
-    transaction: Transaction
+    transaction: TransactionWithRelations
     isOpen: boolean
     onClose: () => void
     onSuccess?: () => void
@@ -76,7 +65,7 @@ export function DeleteTransactionDialog({ transaction, isOpen, onClose, onSucces
                         <div className="flex justify-between text-sm">
                             <span className="text-red-700/70 dark:text-red-400/70">Monto:</span>
                             <span className="font-bold text-red-700 dark:text-red-400">
-                                {formatCurrency(transaction.amount, transaction.currency as 'ARS' | 'USD')}
+                                {formatCurrency(Number(transaction.amount), transaction.currency as 'ARS' | 'USD')}
                             </span>
                         </div>
                         <div className="flex justify-between text-sm">

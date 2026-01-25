@@ -111,7 +111,10 @@ export async function getTransactions(filters?: FinanceFilters) {
         take: 200, // Increased from 50 to 200 for better coverage within a month
     })
 
-    return transactions
+    return transactions.map(t => ({
+        ...t,
+        amount: Number(t.amount)
+    }))
 }
 
 // Export the inferred type for use in components
@@ -776,6 +779,23 @@ export async function deleteTransaction(id: string) {
             where: { id, organizationId: profile.organizationId }
         })
 
+        // Log logical deletion for audit
+        await createAuditLog({
+            eventType: 'TRANSACTION_DELETED',
+            userId: profile.id,
+            userEmail: profile.email,
+            organizationId: profile.organizationId,
+            resourceType: 'Transaction',
+            resourceId: id,
+            details: {
+                amount: transaction.amount.toString(),
+                currency: transaction.currency,
+                type: transaction.type,
+                category: transaction.category.name,
+                reason: 'Eliminación permanente por administrador'
+            }
+        })
+
         revalidatePath('/dashboard/finance')
         revalidatePath('/dashboard/balance')
         revalidatePath('/dashboard/annual-summary')
@@ -784,5 +804,39 @@ export async function deleteTransaction(id: string) {
     } catch (error) {
         console.error('Error deleting transaction:', error)
         return { error: 'Error al eliminar la transacción permanentemente' }
+    }
+}
+
+export async function updateTransaction(transactionId: string, data: { amount?: number, currency?: Currency, categoryId?: string }) {
+    const profile = await requireProfile()
+
+    if (!['ADMIN', 'TREASURER'].includes(profile.role)) {
+        return { error: 'No autorizado' }
+    }
+
+    try {
+        const updateData: any = {}
+        if (data.amount !== undefined) {
+            if (isNaN(data.amount) || data.amount <= 0) {
+                return { error: 'El monto debe ser mayor a 0' }
+            }
+            updateData.amount = new Prisma.Decimal(data.amount)
+        }
+        if (data.currency) updateData.currency = data.currency
+        if (data.categoryId) updateData.categoryId = data.categoryId
+
+        await prisma.transaction.update({
+            where: { id: transactionId, organizationId: profile.organizationId },
+            data: updateData,
+        })
+
+        revalidatePath('/dashboard/finance')
+        revalidatePath('/dashboard/balance')
+        revalidatePath('/dashboard/annual-summary')
+
+        return { success: true }
+    } catch (error) {
+        console.error('Error updating transaction:', error)
+        return { error: 'Error al actualizar la transacción' }
     }
 }

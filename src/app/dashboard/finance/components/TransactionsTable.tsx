@@ -5,45 +5,22 @@ import { formatDateTime, formatCurrency } from '@/lib/dateUtils'
 import { CancelTransactionDialog } from './CancelTransactionDialog'
 import { DeleteTransactionDialog } from './DeleteTransactionDialog'
 import { TransactionDetailDialog } from './TransactionDetailDialog'
-
-import { Category, Member } from '@prisma/client'
-import { Trash2, X, Info } from 'lucide-react'
 import { CreateCategoryDialog } from './CreateCategoryDialog'
-
-interface Transaction {
-    id: string
-    amount: number
-    currency: string
-    type: string
-    description: string | null
-    date: Date
-    cancelledAt: Date | null
-    cancellationReason: string | null
-    category: {
-        name: string
-        parent: { name: string } | null
-    }
-    member: {
-        firstName: string
-        lastName: string
-    } | null
-    createdBy: {
-        fullName: string | null
-        email: string
-    } | null
-}
+import { TransactionWithRelations } from '../actions'
+import { Category } from '@prisma/client'
+import { Trash2, X } from 'lucide-react'
 
 interface Props {
-    transactions: Transaction[]
+    transactions: TransactionWithRelations[]
     userRole: string
-    categories: Category[]
+    categories: (Category & { subcategories: Category[] })[]
     variant?: 'default' | 'compact'
 }
 
 export function TransactionsTable({ transactions, userRole, categories, variant = 'default' }: Props) {
-    const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
-    const [deleteTransactionData, setDeleteTransactionData] = useState<Transaction | null>(null)
-    const [detailTransaction, setDetailTransaction] = useState<Transaction | null>(null)
+    const [selectedTransaction, setSelectedTransaction] = useState<TransactionWithRelations | null>(null)
+    const [deleteTransactionData, setDeleteTransactionData] = useState<TransactionWithRelations | null>(null)
+    const [detailTransaction, setDetailTransaction] = useState<TransactionWithRelations | null>(null)
 
     const canCancel = userRole === 'ADMIN' || userRole === 'TREASURER'
     const isAdmin = userRole === 'ADMIN'
@@ -195,6 +172,7 @@ export function TransactionsTable({ transactions, userRole, categories, variant 
                     onDelete={() => setDeleteTransactionData(detailTransaction)}
                     canCancel={canCancel}
                     isAdmin={isAdmin}
+                    categories={categories}
                 />
             )}
 

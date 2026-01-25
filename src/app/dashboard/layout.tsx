@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { signout } from '@/app/auth/actions'
 import { getCurrentProfile } from '@/lib/auth'
 import Link from 'next/link'
-import { LayoutDashboard, Users, Banknote, Menu, LineChart, PieChart, ShieldCheck as UsersKey, FileText, LogOut } from 'lucide-react'
+import { LayoutDashboard, Users, Banknote, Menu, LineChart, PieChart, ShieldCheck as UsersKey, FileText, LogOut, Settings } from 'lucide-react'
 
 export default async function DashboardLayout({
     children,
@@ -40,7 +40,8 @@ export default async function DashboardLayout({
     if (profile.role === 'ADMIN') {
         navItems.push(
             { href: '/dashboard/users', label: 'Usuarios', icon: UsersKey },
-            { href: '/dashboard/audit-logs', label: 'Auditoría', icon: FileText }
+            { href: '/dashboard/audit-logs', label: 'Auditoría', icon: FileText },
+            { href: '/dashboard/settings', label: 'Configuración', icon: Settings }
         )
     }
 

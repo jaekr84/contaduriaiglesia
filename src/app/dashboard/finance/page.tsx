@@ -145,10 +145,7 @@ export default async function FinancePage(props: Props) {
                         Ingresos Recientes
                     </h2>
                     <TransactionsTable
-                        transactions={transactions.filter(t => t.type === 'INCOME').map(t => ({
-                            ...t,
-                            amount: Number(t.amount)
-                        }))}
+                        transactions={transactions.filter(t => t.type === 'INCOME')}
                         userRole={profile.role}
                         categories={categories}
                         variant="compact"
@@ -162,10 +159,7 @@ export default async function FinancePage(props: Props) {
                         Gastos Recientes
                     </h2>
                     <TransactionsTable
-                        transactions={transactions.filter(t => t.type === 'EXPENSE').map(t => ({
-                            ...t,
-                            amount: Number(t.amount)
-                        }))}
+                        transactions={transactions.filter(t => t.type === 'EXPENSE')}
                         userRole={profile.role}
                         categories={categories}
                         variant="compact"

@@ -28,6 +28,16 @@ export async function createAuditLog(params: AuditLogParams) {
         // Auto-determine severity if not provided
         const severity = params.severity || determineSeverity(params.eventType)
 
+        // Check if audit is enabled for this organization
+        const org = await prisma.organization.findUnique({
+            where: { id: params.organizationId },
+            select: { auditEnabled: true }
+        })
+
+        if (org && !org.auditEnabled) {
+            return
+        }
+
         await prisma.auditLog.create({
             data: {
                 ...params,

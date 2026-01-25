@@ -8,21 +8,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button'
 import { ShieldAlert } from 'lucide-react'
 
-interface Transaction {
-    id: string
-    amount: number
-    currency: string
-    type: string
-    description: string | null
-    date: Date
-    category: {
-        name: string
-        parent: { name: string } | null
-    }
-}
+import { updateTransaction, TransactionWithRelations } from '../actions'
 
 interface Props {
-    transaction: Transaction
+    transaction: TransactionWithRelations
     isOpen: boolean
     onClose: () => void
     onSuccess?: () => void
@@ -91,7 +80,7 @@ export function CancelTransactionDialog({ transaction, isOpen, onClose, onSucces
                         <div className="flex justify-between">
                             <span className="text-sm text-gray-600 dark:text-gray-400">Monto:</span>
                             <span className="font-medium text-zinc-900 dark:text-zinc-50">
-                                {formatCurrency(transaction.amount, transaction.currency as 'ARS' | 'USD')}
+                                {formatCurrency(Number(transaction.amount), transaction.currency as 'ARS' | 'USD')}
                             </span>
                         </div>
                         <div className="flex justify-between">
