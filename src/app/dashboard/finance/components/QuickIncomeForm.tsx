@@ -33,7 +33,7 @@ export function QuickIncomeForm({ categories: initialCategories, userRole }: Qui
 
     const formRef = useRef<HTMLFormElement>(null)
     const firstInputRef = useRef<HTMLInputElement>(null)
-    const subcategoryInputRef = useRef<HTMLInputElement>(null)
+    const subcategoryInputRef = useRef<HTMLButtonElement>(null)
     const subcategoryTriggerRef = useRef<HTMLButtonElement>(null)
     const descriptionInputRef = useRef<HTMLInputElement>(null)
     const router = useRouter()

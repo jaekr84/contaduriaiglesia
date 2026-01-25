@@ -289,13 +289,29 @@ export async function createCategory(formData: FormData) {
 
     if (names.length === 0) return { error: 'Nombre inválido' }
 
+    const normalizedParentId = parentId === 'none' ? null : parentId
+
+    // Check for existing categories with same name, type and parent
+    const existing = await prisma.category.findFirst({
+        where: {
+            organizationId: profile.organizationId,
+            type,
+            parentId: normalizedParentId,
+            name: { in: names, mode: 'insensitive' }
+        }
+    })
+
+    if (existing) {
+        return { error: `Ya existe una categoría o subcategoría llamada "${existing.name}"` }
+    }
+
     try {
         const newCategories = await prisma.$transaction(
             names.map(name => prisma.category.create({
                 data: {
                     name,
                     type,
-                    parentId: parentId === 'none' ? null : parentId,
+                    parentId: normalizedParentId,
                     organizationId: profile.organizationId
                 }
             }))
@@ -385,6 +401,27 @@ export async function updateCategory(id: string, formData: FormData) {
     const name = (formData.get('name') as string).trim()
 
     try {
+        // Enforce uniqueness
+        const category = await prisma.category.findUnique({
+            where: { id, organizationId: profile.organizationId }
+        })
+
+        if (!category) return { error: 'Categoría no encontrada' }
+
+        const existing = await prisma.category.findFirst({
+            where: {
+                organizationId: profile.organizationId,
+                type: category.type,
+                parentId: category.parentId,
+                name: { equals: name, mode: 'insensitive' },
+                id: { not: id }
+            }
+        })
+
+        if (existing) {
+            return { error: `Ya existe una categoría o subcategoría llamada "${name}"` }
+        }
+
         await prisma.category.update({
             where: { id, organizationId: profile.organizationId },
             data: { name }
