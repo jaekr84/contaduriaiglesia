@@ -22,12 +22,13 @@ async function buildWhereClause(profile: any, filters?: FinanceFilters): Promise
 
     if (filters?.dateFrom || filters?.dateTo) {
         where.date = {}
-        if (filters.dateFrom) where.date.gte = new Date(filters.dateFrom)
+        if (filters.dateFrom) {
+            // Force Argentina timezone start of day
+            where.date.gte = new Date(`${filters.dateFrom}T00:00:00-03:00`)
+        }
         if (filters.dateTo) {
-            // Add time to include the full end day
-            const endDate = new Date(filters.dateTo)
-            endDate.setHours(23, 59, 59, 999)
-            where.date.lte = endDate
+            // Force Argentina timezone end of day
+            where.date.lte = new Date(`${filters.dateTo}T23:59:59.999-03:00`)
         }
     }
 
@@ -82,15 +83,19 @@ export async function getTransactions(filters?: FinanceFilters) {
 
     let where = await buildWhereClause(profile, filters)
 
-    // Apply default month filter ONLY if no date range is specified in filters
+    // Apply default filter: TODAY (Argentina Time) if no date range is specified
     if (!filters?.dateFrom && !filters?.dateTo) {
         const now = new Date()
-        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
-        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
+        const argTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Argentina/Buenos_Aires' }))
+        const year = argTime.getFullYear()
+        const month = argTime.getMonth() + 1
+        const day = argTime.getDate()
+
+        const todayStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`
 
         where.date = {
-            gte: firstDay,
-            lte: lastDay,
+            gte: new Date(`${todayStr}T00:00:00-03:00`),
+            lte: new Date(`${todayStr}T23:59:59.999-03:00`),
         }
     }
 
@@ -155,15 +160,19 @@ export async function getFinanceSummary(filters?: FinanceFilters) {
 
     let where = await buildWhereClause(profile, filters)
 
-    // Apply default month filter ONLY if no date range is specified in filters
+    // Apply default filter: TODAY (Argentina Time)
     if (!filters?.dateFrom && !filters?.dateTo) {
         const now = new Date()
-        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
-        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+        const argTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Argentina/Buenos_Aires' }))
+        const year = argTime.getFullYear()
+        const month = argTime.getMonth() + 1
+        const day = argTime.getDate()
+
+        const todayStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`
 
         where.date = {
-            gte: firstDay,
-            lte: lastDay,
+            gte: new Date(`${todayStr}T00:00:00-03:00`),
+            lte: new Date(`${todayStr}T23:59:59.999-03:00`),
         }
     }
 

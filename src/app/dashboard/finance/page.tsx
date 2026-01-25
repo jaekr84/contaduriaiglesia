@@ -2,6 +2,7 @@ import { getFinanceSummary, getTransactions, getCategories } from './actions'
 import { redirect } from 'next/navigation'
 import { Plus, ArrowUpCircle, ArrowDownCircle, Wallet, Settings } from 'lucide-react'
 import { CreateTransactionDialog } from './components/CreateTransactionDialog'
+import { DateRangeFilter } from './components/DateRangeFilter'
 
 import { TransactionsTable } from './components/TransactionsTable'
 import { NewTransactionCard } from './components/NewTransactionCard'
@@ -76,6 +77,8 @@ export default async function FinancePage(props: Props) {
                     <CreateTransactionDialog categories={categories} />
                 </div>
             </div>
+
+            <DateRangeFilter />
 
 
 
