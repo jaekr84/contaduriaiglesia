@@ -344,6 +344,12 @@ export interface CategoryBreakdownItem {
         id: string
         name: string
         total: number
+        transactions: {
+            id: string
+            date: Date
+            description: string
+            amount: number
+        }[]
     }[]
 }
 
@@ -403,16 +409,27 @@ export async function getAnnualCategoryBreakdown(year: number, type: 'INCOME' | 
 
         let subItem = group.subcategories.find(s => s.id === subId)
         if (!subItem) {
-            subItem = { id: subId, name: subName, total: 0 }
+            subItem = { id: subId, name: subName, total: 0, transactions: [] }
             group.subcategories.push(subItem)
         }
         subItem.total += amount
+        subItem.transactions.push({
+            id: tx.id,
+            date: tx.date,
+            description: tx.description || '',
+            amount: amount
+        })
     }
 
     return Array.from(groups.values())
         .map(g => ({
             ...g,
-            subcategories: g.subcategories.sort((a, b) => b.total - a.total)
+            subcategories: g.subcategories
+                .map(s => ({
+                    ...s,
+                    transactions: s.transactions.sort((a, b) => b.date.getTime() - a.date.getTime())
+                }))
+                .sort((a, b) => b.total - a.total)
         }))
         .sort((a, b) => b.total - a.total)
 }

@@ -162,7 +162,7 @@ export function MemberStats({ stats, totalMembers }: MemberStatsProps) {
             {/* Gender Distribution */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Composición por Sexo</CardTitle>
+                    <CardTitle>Composición por Genero</CardTitle>
                     <CardDescription>Distribución de miembros por género</CardDescription>
                 </CardHeader>
                 <CardContent className="flex justify-center h-[300px]">
