@@ -48,9 +48,9 @@ export default async function BudgetPage(props: Props) {
                 </div>
                 <div className="w-full sm:w-auto flex items-center gap-2">
                     <Button variant="outline" size="sm" asChild className="hidden sm:flex">
-                        <Link href="/dashboard/finance/budgets/simulator">
+                        <Link href="/dashboard/finance/budgets/planner">
                             <Calculator className="mr-2 h-4 w-4" />
-                            Simulador
+                            Planificador
                         </Link>
                     </Button>
                     <CopyBudgetButton
@@ -59,8 +59,12 @@ export default async function BudgetPage(props: Props) {
                         monthLabel={new Date(year, month - 1).toLocaleString('es-AR', { month: 'long' })}
                         userRole={profile.role}
                     />
-                    <BudgetTabs />
                 </div>
+            </div>
+
+            {/* Tabs Row */}
+            <div>
+                <BudgetTabs />
             </div>
 
             {/* Main Content */}

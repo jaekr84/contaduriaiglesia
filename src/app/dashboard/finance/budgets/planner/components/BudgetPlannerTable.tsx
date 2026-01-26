@@ -34,7 +34,7 @@ interface Props {
     targetYear: number
 }
 
-type SimulatorRow = {
+type PlannerRow = {
     categoryId: string
     categoryName: string
     baseBudget: number
@@ -43,7 +43,7 @@ type SimulatorRow = {
     hasChildren: boolean
 }
 
-export function BudgetSimulatorTable({ baseOverview, baseYear, targetYear }: Props) {
+export function BudgetPlannerTable({ baseOverview, baseYear, targetYear }: Props) {
     const [currency, setCurrency] = useState<'ARS' | 'USD'>('ARS')
 
     // State: map[categoryId] -> Array(12) of numbers.
@@ -87,7 +87,7 @@ export function BudgetSimulatorTable({ baseOverview, baseYear, targetYear }: Pro
         setDraftValues(prev => ({ ...prev, [categoryId]: next }))
     }
 
-    const getRowData = (row: any): SimulatorRow => {
+    const getRowData = (row: any): PlannerRow => {
         const values = getValues(row.categoryId)
         let newBudget = 0
 
@@ -140,9 +140,9 @@ export function BudgetSimulatorTable({ baseOverview, baseYear, targetYear }: Pro
         }
     }
 
-    const simulatorRows = rows.map(getRowData)
+    const plannerRows = rows.map(getRowData)
 
-    const filteredRows = simulatorRows.filter(r => {
+    const filteredRows = plannerRows.filter(r => {
         if (showEmpty) return true
         return r.baseBudget > 0 || r.baseSpent > 0 || r.newBudget > 0
     })
@@ -264,7 +264,7 @@ export function BudgetSimulatorTable({ baseOverview, baseYear, targetYear }: Pro
             })
         }
 
-        exportToExcel(sheets, `Simulacion_${targetYear}_Completa_${currency}`)
+        exportToExcel(sheets, `Planificacion_${targetYear}_Completa_${currency}`)
     }
 
     // Totals
@@ -472,5 +472,3 @@ export function BudgetSimulatorTable({ baseOverview, baseYear, targetYear }: Pro
         </div>
     )
 }
-
-

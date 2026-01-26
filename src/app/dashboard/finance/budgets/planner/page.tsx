@@ -1,13 +1,13 @@
 import { requireProfile } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { getBudgetOverview, saveAnnualBudget } from '../../budget-actions'
-import { BudgetSimulatorTable } from './components/BudgetSimulatorTable'
+import { BudgetPlannerTable } from './components/BudgetPlannerTable'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-    title: 'Simulador de Presupuesto',
+    title: 'Planificador de Presupuesto',
 }
 
 interface Props {
@@ -17,7 +17,7 @@ interface Props {
     }>
 }
 
-export default async function BudgetSimulatorPage(props: Props) {
+export default async function BudgetPlannerPage(props: Props) {
     const searchParams = await props.searchParams
     const profile = await requireProfile()
 
@@ -39,14 +39,14 @@ export default async function BudgetSimulatorPage(props: Props) {
                     <ArrowLeft className="h-5 w-5 text-zinc-500" />
                 </Link>
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Simulador de Presupuesto</h1>
+                    <h1 className="text-2xl font-bold tracking-tight">Planificador de Presupuesto</h1>
                     <p className="text-sm text-zinc-500">
                         Planifica el presupuesto anual para {targetYear} basándote en datos de {baseYear}.
                     </p>
                 </div>
             </div>
 
-            <BudgetSimulatorTable
+            <BudgetPlannerTable
                 baseOverview={baseOverview}
                 baseYear={baseYear}
                 targetYear={targetYear}
