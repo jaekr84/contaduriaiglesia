@@ -1,6 +1,6 @@
 import { getFinanceSummary, getTransactions, getCategories } from './actions'
 import { redirect } from 'next/navigation'
-import { Plus, ArrowUpCircle, ArrowDownCircle, Wallet, Settings } from 'lucide-react'
+import { Plus, ArrowUpCircle, ArrowDownCircle, Wallet, Settings, PieChart } from 'lucide-react'
 import { CreateTransactionDialog } from './components/CreateTransactionDialog'
 import { DateRangeFilter } from './components/DateRangeFilter'
 
@@ -68,6 +68,13 @@ export default async function FinancePage(props: Props) {
                 </div>
                 <div className="flex items-center gap-2">
                     <DateRangeFilter />
+                    <Link
+                        href="/dashboard/finance/budgets"
+                        className="inline-flex items-center justify-center gap-2 rounded-md border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-900 shadow-sm hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:bg-zinc-800"
+                    >
+                        <PieChart className="mr-2 h-4 w-4" />
+                        Presupuesto
+                    </Link>
                     <Link
                         href="/dashboard/finance/categories"
                         className="inline-flex items-center justify-center gap-2 rounded-md border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-900 shadow-sm hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:hover:bg-zinc-800"

@@ -20,6 +20,7 @@ model Organization {
   members      Member[]
   invitations  Invitation[]
   auditLogs    AuditLog[]
+  budgets      Budget[]
 }
 
 model Invitation {
@@ -52,6 +53,9 @@ model Profile {
 
   createdTransactions   Transaction[] @relation("CreatedBy")
   cancelledTransactions Transaction[] @relation("CancelledBy")
+  
+  createdBudgets        Budget[]      @relation("BudgetCreatedBy")
+  updatedBudgets        Budget[]      @relation("BudgetUpdatedBy")
 }
 
 
@@ -84,6 +88,8 @@ model Category {
   // So we remove the global unique constraint or add parentId. 
   // Postgres treats NULLs as distinct for unique indexes usually, but let's just make it loose for now.
   @@index([organizationId, type])
+
+  budgets Budget[]
 }
 
 model Member {
@@ -150,6 +156,32 @@ model Transaction {
   @@index([organizationId, type])
   @@index([categoryId])
   @@index([cancelledAt])
+}
+
+model Budget {
+  id             String       @id @default(uuid())
+  amount         Decimal      @db.Decimal(10, 2)
+  month          Int          // 1-12
+  year           Int
+  currency       Currency     @default(ARS)
+  
+  categoryId     String
+  category       Category     @relation(fields: [categoryId], references: [id])
+  
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  createdById    String?
+  createdBy      Profile?     @relation("BudgetCreatedBy", fields: [createdById], references: [id])
+  updatedById    String?
+  updatedBy      Profile?     @relation("BudgetUpdatedBy", fields: [updatedById], references: [id])
+
+  // Ensures only one budget per category per month/year
+  @@unique([organizationId, categoryId, month, year])
+  @@index([organizationId, month, year])
 }
 
 enum TransactionType {
@@ -219,6 +251,11 @@ enum AuditEventType {
   USER_REMOVED
   INVITATION_REVOKED
   INVITATION_ACCEPTED
+
+  // Budgets
+  BUDGET_CREATED
+  BUDGET_UPDATED
+  BUDGET_BATCH_UPDATE
 }
 
 enum AuditSeverity {

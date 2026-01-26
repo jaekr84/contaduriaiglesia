@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { signout } from '@/app/auth/actions'
 import { getCurrentProfile } from '@/lib/auth'
 import Link from 'next/link'
-import { LayoutDashboard, Users, Banknote, Menu, LineChart, PieChart, ShieldCheck as UsersKey, FileText, LogOut, Settings } from 'lucide-react'
+import { LayoutDashboard, Users, Banknote, Menu, LineChart, PieChart, ShieldCheck as UsersKey, FileText, LogOut, Settings, Wallet } from 'lucide-react'
 
 export default async function DashboardLayout({
     children,
@@ -16,9 +16,10 @@ export default async function DashboardLayout({
 
     const navItems = []
 
-    // Finanzas: ADMIN, TREASURER
+    // Finanzas & Presupuesto: ADMIN, TREASURER
     if (['ADMIN', 'TREASURER'].includes(profile.role)) {
         navItems.push({ href: '/dashboard/finance', label: 'Finanzas', icon: Banknote })
+        navItems.push({ href: '/dashboard/finance/budgets', label: 'Presupuesto', icon: Wallet })
     }
 
     // Reportes (Annual Summary): ADMIN, TREASURER, VIEWER
