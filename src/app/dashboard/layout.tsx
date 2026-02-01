@@ -71,15 +71,23 @@ export default async function DashboardLayout({
 
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-3 border-l border-zinc-200 pl-4 dark:border-zinc-800">
-                        <div className="flex flex-col text-right hidden sm:flex">
-                            <span className="text-xs font-medium text-zinc-900 dark:text-zinc-50">
-                                {profile.email.split('@')[0]}
-                            </span>
-                            <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
-                                {profile.role}
-                            </span>
-                        </div>
-                        <div className="h-8 w-8 rounded-full bg-zinc-200 dark:bg-zinc-800" />
+                        <Link
+                            href="/dashboard/profile"
+                            className="flex items-center gap-3 transition-opacity hover:opacity-80"
+                            title="Ver Perfil"
+                        >
+                            <div className="flex flex-col text-right hidden sm:flex">
+                                <span className="text-xs font-medium text-zinc-900 dark:text-zinc-50">
+                                    {profile.email.split('@')[0]}
+                                </span>
+                                <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                                    {profile.role}
+                                </span>
+                            </div>
+                            <div className="h-8 w-8 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center">
+                                <Users className="h-4 w-4 text-zinc-400" />
+                            </div>
+                        </Link>
 
                         <form action={lockSession}>
                             <button
