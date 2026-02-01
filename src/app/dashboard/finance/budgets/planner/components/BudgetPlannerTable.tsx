@@ -1,13 +1,14 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect } from 'react'
 import { BudgetOverview, saveAnnualBudget } from '../../../budget-actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ArrowLeft, Check, Loader2, RefreshCw, Calculator, ArrowRight, Download } from 'lucide-react'
+import { ArrowLeft, Check, Loader2, RefreshCw, Calculator, ArrowRight, Download, Repeat, Lock, Unlock, Pencil, X, Plus } from 'lucide-react'
+import { AddCategoryCard } from './AddCategoryCard'
 import { MoneyInput } from '../../../components/MoneyInput'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
@@ -32,6 +33,7 @@ interface Props {
     baseOverview: BudgetOverview
     baseYear: number
     targetYear: number
+    initialData?: Record<string, { ARS: number[], USD: number[] }>
 }
 
 type PlannerRow = {
@@ -41,13 +43,42 @@ type PlannerRow = {
     baseSpent: number
     newBudget: number
     hasChildren: boolean
+    parentId: string | null
+    annualBaseBudget: number
+    annualBaseSpent: number
 }
 
-export function BudgetPlannerTable({ baseOverview, baseYear, targetYear }: Props) {
+export function BudgetPlannerTable({ baseOverview, baseYear, targetYear, initialData }: Props) {
     const [currency, setCurrency] = useState<'ARS' | 'USD'>('ARS')
 
     // State: map[categoryId] -> Array(12) of numbers.
-    const [draftValues, setDraftValues] = useState<Record<string, number[]>>({})
+    const [draftValues, setDraftValues] = useState<Record<string, number[]>>(() => {
+        if (!initialData) return {}
+        const initial: Record<string, number[]> = {}
+        Object.entries(initialData).forEach(([catId, values]) => {
+            initial[catId] = values['ARS'] // Default to ARS
+        })
+        return initial
+    })
+
+    // Sync draft values when currency changes or initialData loads
+    useEffect(() => {
+        if (initialData) {
+            setDraftValues(prev => {
+                const next = { ...prev }
+                Object.entries(initialData).forEach(([catId, values]) => {
+                    // Only overwrite if not already set? Or always overwrite on currency switch?
+                    // Issue: If user edits ARS, then switches to USD, we want to see USD saved values.
+                    // But if user edits ARS, switches back to ARS, we want to keep edits?
+                    // Current simplifiction: Reset to initialData[currency] on currency switch?
+                    // Better: Merge mechanism is complex. 
+                    // Let's just load the appropriate currency data into draftValues.
+                    next[catId] = values[currency]
+                })
+                return next
+            })
+        }
+    }, [currency, initialData])
 
     // 'annual' or '1'..'12'
     const [activeTab, setActiveTab] = useState<string>('annual')
@@ -55,6 +86,22 @@ export function BudgetPlannerTable({ baseOverview, baseYear, targetYear }: Props
     const [showEmpty, setShowEmpty] = useState(false)
     const [inflationRate, setInflationRate] = useState('0')
     const [isSaving, startTransition] = useTransition()
+
+    // Safety: Edit Modes
+    const [isGlobalEditing, setIsGlobalEditing] = useState(false)
+    const [editingCategories, setEditingCategories] = useState<Set<string>>(new Set())
+
+    const toggleRowEditing = (categoryId: string) => {
+        setEditingCategories(prev => {
+            const next = new Set(prev)
+            if (next.has(categoryId)) {
+                next.delete(categoryId)
+            } else {
+                next.add(categoryId)
+            }
+            return next
+        })
+    }
 
     const rows = baseOverview[currency]
 
@@ -136,7 +183,10 @@ export function BudgetPlannerTable({ baseOverview, baseYear, targetYear }: Props
             baseBudget: displayBaseBudget,
             baseSpent: displayBaseSpent,
             newBudget,
-            hasChildren: row.hasChildren || false
+            hasChildren: row.hasChildren || false,
+            parentId: row.parentId || null,
+            annualBaseBudget: row.budgetAmount,
+            annualBaseSpent: row.spentAmount,
         }
     }
 
@@ -188,6 +238,14 @@ export function BudgetPlannerTable({ baseOverview, baseYear, targetYear }: Props
         toast.success(`Inflación de ${rate}% aplicada`)
     }
 
+    const handlePropagateValue = (categoryId: string, value: number) => {
+        setDraftValues(prev => ({
+            ...prev,
+            [categoryId]: Array(12).fill(value)
+        }))
+        toast.success('Valor aplicado a todos los meses')
+    }
+
     const handleSave = () => {
         startTransition(async () => {
             const updates = Object.entries(draftValues).map(([categoryId, amounts]) => ({
@@ -201,6 +259,7 @@ export function BudgetPlannerTable({ baseOverview, baseYear, targetYear }: Props
                 toast.error(result.error)
             } else {
                 toast.success('Presupuesto anual creado correctamente')
+                setIsGlobalEditing(false) // Disable editing mode after save
             }
         })
     }
@@ -238,11 +297,13 @@ export function BudgetPlannerTable({ baseOverview, baseYear, targetYear }: Props
 
                 // Base Budget/Spent approximation (Annual / 12) or Total
                 // Base is ALWAYS annual in incoming data 'row.baseBudget'.
-                let baseBudget = row.baseBudget
-                let baseSpent = row.baseSpent
+                // Base Budget/Spent approximation (Annual / 12) or Total
+                // Use explicit annualBaseBudget from row to avoid view-dependent errors
+                let baseBudget = row.annualBaseBudget
+                let baseSpent = row.annualBaseSpent
                 if (m > 0) {
-                    baseBudget = row.baseBudget / 12
-                    baseSpent = row.baseSpent / 12
+                    baseBudget = row.annualBaseBudget / 12
+                    baseSpent = row.annualBaseSpent / 12
                 }
 
                 const diff = newBudget - baseBudget
@@ -275,6 +336,8 @@ export function BudgetPlannerTable({ baseOverview, baseYear, targetYear }: Props
 
     return (
         <div className="space-y-6">
+            <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">Planificador de Presupuesto</h1>
+
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-zinc-50 dark:bg-zinc-900/50 p-4 rounded-lg border">
                 <div className="flex items-center gap-4">
                     <Tabs value={currency} onValueChange={(v) => setCurrency(v as 'ARS' | 'USD')} className="w-auto">
@@ -295,38 +358,40 @@ export function BudgetPlannerTable({ baseOverview, baseYear, targetYear }: Props
                         <Download className="h-4 w-4 mr-2" />
                         Exportar
                     </Button>
-                    <Button variant="outline" size="sm" onClick={handleCopyBaseBudget}>
-                        Copiar Presupuesto {baseYear}
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={handleCopyBaseSpent}>
-                        Copiar Gastado {baseYear}
-                    </Button>
 
-                    <div className="flex items-center gap-2 border-l pl-2 dark:border-zinc-700">
-                        <div className="relative">
-                            <Input
-                                className="w-20 h-8"
-                                placeholder="%"
-                                value={inflationRate}
-                                onChange={e => setInflationRate(e.target.value)}
-                            />
-                            <span className="absolute right-2 top-1.5 text-xs text-zinc-400">%</span>
-                        </div>
-                        <Button variant="secondary" size="sm" onClick={handleApplyInflation}>
-                            <Calculator className="h-4 w-4 mr-2" />
-                            Ajustar
-                        </Button>
-                    </div>
+                    <Button variant="outline" size="sm" onClick={() => setIsGlobalEditing(!isGlobalEditing)} className={cn("min-w-[140px]", isGlobalEditing ? "bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100 hover:text-amber-700 dark:bg-amber-900/10 dark:text-amber-400 dark:border-amber-800" : "")}>
+                        {isGlobalEditing ? <Unlock className="h-4 w-4 mr-2" /> : <Lock className="h-4 w-4 mr-2" />}
+                        {isGlobalEditing ? 'Edición Habilitada' : 'Habilitar Edición'}
+                    </Button>
+                    {isGlobalEditing && (
+                        <>
+                            <Button variant="outline" size="sm" onClick={handleCopyBaseBudget}>
+                                Copiar Presupuesto {baseYear}
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={handleCopyBaseSpent}>
+                                Copiar Gastado {baseYear}
+                            </Button>
+                        </>
+                    )}
                 </div>
             </div>
+
+            <div>
+                {isGlobalEditing && (
+                    <AddCategoryCard
+                        allCategories={plannerRows.map(r => ({ id: r.categoryId, name: r.categoryName, parentId: r.parentId }))}
+                        targetYear={targetYear}
+                        onSuccess={() => setIsGlobalEditing(false)}
+                    />
+                )}            </div>
 
             <div className="space-y-4">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                     <TabsList className="w-full justify-start overflow-x-auto">
                         <TabsTrigger value="annual" className="font-bold">Anual Total</TabsTrigger>
                         {Array.from({ length: 12 }, (_, i) => (
-                            <TabsTrigger key={i} value={(i + 1).toString()}>
-                                {new Date(2000, i, 1).toLocaleDateString('es-AR', { month: 'short' })}
+                            <TabsTrigger key={i} value={(i + 1).toString()} className="capitalize">
+                                {new Date(2000, i, 1).toLocaleDateString('es-AR', { month: 'long' })}
                             </TabsTrigger>
                         ))}
                     </TabsList>
@@ -363,7 +428,7 @@ export function BudgetPlannerTable({ baseOverview, baseYear, targetYear }: Props
                                                 {new Intl.NumberFormat('es-AR', { style: 'currency', currency }).format(row.baseBudget)}
                                             </TableCell>
                                             <TableCell className="text-right text-zinc-500">
-                                                {new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2 }).format(row.baseSpent)}
+                                                {new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(row.baseSpent)}
                                             </TableCell>
                                             <TableCell className="text-right font-medium">
                                                 {new Intl.NumberFormat('es-AR', { style: 'currency', currency }).format(row.newBudget)}
@@ -389,19 +454,52 @@ export function BudgetPlannerTable({ baseOverview, baseYear, targetYear }: Props
                                             {new Intl.NumberFormat('es-AR', { style: 'currency', currency }).format(row.baseBudget)}
                                         </TableCell>
                                         <TableCell className="text-right text-zinc-500">
-                                            {new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2 }).format(row.baseSpent)}
+                                            {new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(row.baseSpent)}
                                         </TableCell>
                                         <TableCell className="text-right bg-zinc-50 dark:bg-zinc-800/50">
-                                            <MoneyInput
-                                                value={row.newBudget.toString()}
-                                                onChange={(val) => {
-                                                    const num = parseFloat(val)
-                                                    if (!isNaN(num)) {
-                                                        updateValue(row.categoryId, num)
-                                                    }
-                                                }}
-                                                className="h-8 text-right bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700"
-                                            />
+                                            <div className="flex items-center justify-end gap-1">
+                                                <MoneyInput
+                                                    value={row.newBudget === 0 ? '' : row.newBudget.toString()}
+                                                    placeholder="0"
+                                                    disabled={!isGlobalEditing && !editingCategories.has(row.categoryId)}
+                                                    onChange={(val) => {
+                                                        const num = parseFloat(val)
+                                                        if (isNaN(num)) {
+                                                            updateValue(row.categoryId, 0)
+                                                        } else {
+                                                            updateValue(row.categoryId, num)
+                                                        }
+                                                    }}
+                                                    className={cn(
+                                                        "h-8 text-right border-zinc-200 dark:border-zinc-700 transition-colors",
+                                                        (!isGlobalEditing && !editingCategories.has(row.categoryId))
+                                                            ? "bg-zinc-50 text-zinc-500 dark:bg-zinc-800/50 dark:text-zinc-500 cursor-not-allowed"
+                                                            : "bg-white dark:bg-zinc-900"
+                                                    )}
+                                                />
+                                                {!isGlobalEditing && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 ml-1 text-zinc-400 hover:text-zinc-600 dark:text-zinc-600 dark:hover:text-zinc-400"
+                                                        title={editingCategories.has(row.categoryId) ? "Terminar edición" : "Editar fila"}
+                                                        onClick={() => toggleRowEditing(row.categoryId)}
+                                                    >
+                                                        {editingCategories.has(row.categoryId) ? <Check className="h-3 w-3" /> : <Pencil className="h-3 w-3" />}
+                                                    </Button>
+                                                )}
+                                                {(isGlobalEditing || editingCategories.has(row.categoryId)) && activeTab !== 'annual' && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 ml-1 text-zinc-400 hover:text-zinc-600 dark:text-zinc-600 dark:hover:text-zinc-400"
+                                                        title="Repetir este valor en todos los meses"
+                                                        onClick={() => handlePropagateValue(row.categoryId, row.newBudget)}
+                                                    >
+                                                        <Repeat className="h-3 w-3" />
+                                                    </Button>
+                                                )}
+                                            </div>
                                         </TableCell>
                                         <TableCell className={cn("text-right font-medium", diff > 0 ? "text-red-500" : diff < 0 ? "text-green-600" : "text-zinc-500")}>
                                             {diff > 0 && '+'}{new Intl.NumberFormat('es-AR', { minimumFractionDigits: 0 }).format(diff)}
@@ -438,37 +536,39 @@ export function BudgetPlannerTable({ baseOverview, baseYear, targetYear }: Props
                 </div>
             </div>
 
-            <div className="flex justify-end gap-3 sticky bottom-4 bg-white dark:bg-zinc-950 p-4 border rounded-lg shadow-lg">
-                <Button variant="ghost" asChild>
-                    <Link href="/dashboard/finance/budgets">Cancelar</Link>
-                </Button>
+            {isGlobalEditing && (
+                <div className="flex justify-end gap-3 sticky bottom-4 bg-white dark:bg-zinc-950 p-4 border rounded-lg shadow-lg">
+                    <Button variant="ghost" asChild>
+                        <Link href="/dashboard/finance/budgets">Cancelar</Link>
+                    </Button>
 
-                <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                        <Button disabled={isSaving || filteredRows.length === 0} className="w-auto px-6 bg-green-600 hover:bg-green-700 text-white">
-                            {isSaving ? <Loader2 className="animate-spin mr-2" /> : <Check className="mr-2" />}
-                            Guardar Presupuesto {targetYear}
-                        </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>¿Confirmar nuevo presupuesto?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                Estás a punto de sobrescribir el presupuesto del año {targetYear}.
-                                Esta acción guardará los montos definidos para cada mes y categoría.
-                                <br /><br />
-                                Por favor, asegúrate de haber revisado todos los meses antes de continuar.
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleSave} className="bg-green-600 hover:bg-green-700">
-                                Confirmar y Guardar
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-            </div>
-        </div>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button disabled={isSaving || filteredRows.length === 0} className="w-auto px-6 bg-green-600 hover:bg-green-700 text-white">
+                                {isSaving ? <Loader2 className="animate-spin mr-2" /> : <Check className="mr-2" />}
+                                Guardar Presupuesto {targetYear}
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>¿Confirmar nuevo presupuesto?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Estás a punto de sobrescribir el presupuesto del año {targetYear}.
+                                    Esta acción guardará los montos definidos para cada mes y categoría.
+                                    <br /><br />
+                                    Por favor, asegúrate de haber revisado todos los meses antes de continuar.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleSave} className="bg-green-600 hover:bg-green-700">
+                                    Confirmar y Guardar
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </div>
+            )}
+        </div >
     )
 }

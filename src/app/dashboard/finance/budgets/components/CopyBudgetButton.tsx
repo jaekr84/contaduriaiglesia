@@ -49,12 +49,6 @@ export function CopyBudgetButton({ month, year, monthLabel, userRole }: Props) {
 
     return (
         <AlertDialog>
-            <AlertDialogTrigger asChild>
-                <Button variant="outline" size="sm" className="hidden sm:flex">
-                    <Copy className="mr-2 h-4 w-4" />
-                    Replicar anual
-                </Button>
-            </AlertDialogTrigger>
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>¿Replicar presupuesto?</AlertDialogTitle>

@@ -247,6 +247,47 @@ export async function updateBatchBudgets(
 
 }
 
+
+export async function getAnnualBudgetBreakdown(year: number) {
+    const profile = await requireProfile()
+
+    if (!['ADMIN', 'TREASURER'].includes(profile.role)) {
+        return { error: 'No autorizado' }
+    }
+
+    try {
+        const budgets = await prisma.budget.findMany({
+            where: {
+                organizationId: profile.organizationId,
+                year
+            }
+        })
+
+        // Structure: categoryId -> { ARS: number[12], USD: number[12] }
+        const breakdown: Record<string, { ARS: number[], USD: number[] }> = {}
+
+        budgets.forEach(b => {
+            if (!breakdown[b.categoryId]) {
+                breakdown[b.categoryId] = {
+                    ARS: Array(12).fill(0),
+                    USD: Array(12).fill(0)
+                }
+            }
+
+            // b.month is 1-12
+            const monthIndex = b.month - 1
+            if (monthIndex >= 0 && monthIndex < 12) {
+                breakdown[b.categoryId][b.currency][monthIndex] = Number(b.amount)
+            }
+        })
+
+        return { data: breakdown }
+    } catch (error) {
+        console.error('Error fetching annual budget breakdown:', error)
+        return { error: 'Error al cargar presupuesto existente' }
+    }
+}
+
 export async function saveAnnualBudget(
     updates: { categoryId: string; amounts: number[]; currency: Currency }[],
     year: number
@@ -710,5 +751,98 @@ export async function getYearlyExportData(year: number) {
     } catch (error) {
         console.error('Error fetching yearly data:', error)
         return { error: 'Error al exportar datos' }
+    }
+}
+
+
+
+export async function createCategoryWithBudget(
+    name: string,
+    parentId: string | null,
+    monthlyAmounts: number[], // Array of 12 monthly amounts
+    year: number,
+    currency: Currency
+) {
+    const profile = await requireProfile()
+
+    if (!['ADMIN', 'TREASURER'].includes(profile.role)) {
+        return { error: 'No autorizado' }
+    }
+
+    const cleanName = name.trim()
+    if (!cleanName) return { error: 'Nombre inválido' }
+
+    try {
+        const result = await prisma.$transaction(async (tx) => {
+            // 1. Create OR Fix Category
+            const normalizedParentId = parentId === 'none' ? null : parentId
+
+            let category = await tx.category.findFirst({
+                where: {
+                    organizationId: profile.organizationId,
+                    type: 'EXPENSE',
+                    parentId: normalizedParentId,
+                    name: { equals: cleanName, mode: 'insensitive' }
+                }
+            })
+
+            if (!category) {
+                const maxOrder = await tx.category.aggregate({
+                    where: {
+                        organizationId: profile.organizationId,
+                        type: 'EXPENSE',
+                        parentId: normalizedParentId
+                    },
+                    _max: { order: true }
+                })
+                const baseOrder = (maxOrder._max.order ?? -1) + 1
+
+                category = await tx.category.create({
+                    data: {
+                        name: cleanName,
+                        type: 'EXPENSE',
+                        parentId: normalizedParentId,
+                        organizationId: profile.organizationId,
+                        order: baseOrder
+                    }
+                })
+            }
+
+
+            // 2. Create Budget using monthly amounts directly (no division)
+            // Delete existing budgets for this year/category to avoid duplicates
+            await tx.budget.deleteMany({
+                where: {
+                    organizationId: profile.organizationId,
+                    categoryId: category.id,
+                    year
+                }
+            })
+
+            // Create budget records for each month with their specific amounts
+            const budgetData = monthlyAmounts.map((amount, index) => ({
+                organizationId: profile.organizationId,
+                categoryId: category.id,
+                amount: amount,
+                currency,
+                month: index + 1,
+                year,
+                createdById: profile.id,
+                updatedById: profile.id
+            }))
+
+            await tx.budget.createMany({
+                data: budgetData
+            })
+
+            return category
+        })
+
+        revalidatePath('/dashboard/finance/budgets')
+        return { success: true, category: result }
+
+    } catch (e: any) {
+        console.error(e)
+        return { error: e.message || 'Error al crear categoría y presupuesto' }
     }
 }
