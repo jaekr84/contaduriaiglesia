@@ -4,8 +4,8 @@ import { ExchangeForm } from './ExchangeForm'
 
 export function NewExchangeCard() {
     return (
-        <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 mb-8 border-l-4 border-l-purple-500">
-            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-4">Registrar Cambio de Moneda</h2>
+        <div className="rounded-lg border border-zinc-200 bg-white px-4 py-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 mb-6 border-l-4 border-l-purple-500">
+            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-3">Cambio de Moneda</h3>
             <ExchangeForm />
         </div>
     )

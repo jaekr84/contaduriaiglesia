@@ -90,61 +90,60 @@ export default async function FinancePage(props: Props) {
 
 
 
-            {/* Summary Cards */}
-            <div className="grid gap-4 md:grid-cols-3">
-                <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-                    <div className="flex items-center gap-2 text-green-600 dark:text-green-500 mb-2">
-                        <ArrowUpCircle className="h-5 w-5" />
-                        <span className="text-sm font-medium">Ingresos</span>
-                    </div>
-                    <div className="space-y-1">
-                        <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-                            {formatCurrency(summary.ARS.income, 'ARS')}
-                        </div>
-                        <div className="text-lg font-semibold text-zinc-500 dark:text-zinc-400">
-                            {formatCurrency(summary.USD.income, 'USD')}
-                        </div>
-                    </div>
-                </div>
 
-                <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-                    <div className="flex items-center gap-2 text-red-600 dark:text-red-500 mb-2">
-                        <ArrowDownCircle className="h-5 w-5" />
-                        <span className="text-sm font-medium">Gastos</span>
-                    </div>
-                    <div className="space-y-1">
-                        <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-                            {formatCurrency(summary.ARS.expense, 'ARS')}
-                        </div>
-                        <div className="text-lg font-semibold text-zinc-500 dark:text-zinc-400">
-                            {formatCurrency(summary.USD.expense, 'USD')}
-                        </div>
-                    </div>
-                </div>
-
-                <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-                    <div className="flex items-center gap-2 text-blue-600 dark:text-blue-500 mb-2">
-                        <Wallet className="h-5 w-5" />
-                        <span className="text-sm font-medium">Balance</span>
-                    </div>
-                    <div className="space-y-1">
-                        <div className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-                            {formatCurrency(summary.ARS.balance, 'ARS')}
-                        </div>
-                        <div className="text-lg font-semibold text-zinc-500 dark:text-zinc-400">
-                            {formatCurrency(summary.USD.balance, 'USD')}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* New Transaction Card */}
-            <NewExchangeCard />
 
             {/* Quick Entry Forms */}
             <div className="grid gap-6 md:grid-cols-2">
                 <QuickIncomeForm categories={categories} userRole={profile.role} />
                 <QuickExpenseForm categories={categories} userRole={profile.role} />
+            </div>
+
+            {/* New Transaction Card */}
+            <NewExchangeCard />
+
+            {/* Summary KPIs - Inline Format */}
+            <div className="grid gap-4 md:grid-cols-3">
+                {/* Ingresos */}
+                <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 dark:border-green-900 dark:bg-green-950">
+                    <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 text-center">
+                        <span className="text-green-600 dark:text-green-500 font-semibold">INGRESOS:</span>{' '}
+                        <span className="text-zinc-900 dark:text-zinc-50 font-semibold">
+                            ARS {formatCurrency(summary.ARS.income, 'ARS').replace('ARS', '').trim()}
+                        </span>
+                        {' / '}
+                        <span className="text-zinc-600 dark:text-zinc-400 font-medium">
+                            USD {formatCurrency(summary.USD.income, 'USD').replace('US$', '').trim()}
+                        </span>
+                    </p>
+                </div>
+
+                {/* Balance */}
+                <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 dark:border-blue-900 dark:bg-blue-950">
+                    <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 text-center">
+                        <span className="text-blue-600 dark:text-blue-500 font-semibold">BALANCE:</span>{' '}
+                        <span className="text-zinc-900 dark:text-zinc-50 font-semibold">
+                            ARS {formatCurrency(summary.ARS.balance, 'ARS').replace('ARS', '').trim()}
+                        </span>
+                        {' / '}
+                        <span className="text-zinc-600 dark:text-zinc-400 font-medium">
+                            USD {formatCurrency(summary.USD.balance, 'USD').replace('US$', '').trim()}
+                        </span>
+                    </p>
+                </div>
+
+                {/* Gastos */}
+                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900 dark:bg-red-950">
+                    <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 text-center">
+                        <span className="text-red-600 dark:text-red-500 font-semibold">GASTOS:</span>{' '}
+                        <span className="text-zinc-900 dark:text-zinc-50 font-semibold">
+                            ARS {formatCurrency(summary.ARS.expense, 'ARS').replace('ARS', '').trim()}
+                        </span>
+                        {' / '}
+                        <span className="text-zinc-600 dark:text-zinc-400 font-medium">
+                            USD {formatCurrency(summary.USD.expense, 'USD').replace('US$', '').trim()}
+                        </span>
+                    </p>
+                </div>
             </div>
 
             {/* Split Transactions Tables */}
