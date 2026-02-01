@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation'
-import { signout } from '@/app/auth/actions'
+import { signout, lockSession } from '@/app/auth/actions'
 import { getCurrentProfile } from '@/lib/auth'
 import Link from 'next/link'
-import { LayoutDashboard, Users, Banknote, Menu, LineChart, PieChart, ShieldCheck as UsersKey, FileText, LogOut, Settings, Wallet } from 'lucide-react'
+import { LayoutDashboard, Users, Banknote, Menu, LineChart, PieChart, ShieldCheck as UsersKey, FileText, LogOut, Settings, Wallet, Lock } from 'lucide-react'
 
 export default async function DashboardLayout({
     children,
@@ -80,6 +80,16 @@ export default async function DashboardLayout({
                             </span>
                         </div>
                         <div className="h-8 w-8 rounded-full bg-zinc-200 dark:bg-zinc-800" />
+
+                        <form action={lockSession}>
+                            <button
+                                type="submit"
+                                title="Bloquear Pantalla"
+                                className="flex h-10 w-10 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
+                            >
+                                <Lock className="h-5 w-5" />
+                            </button>
+                        </form>
 
                         <form action={signout}>
                             <button

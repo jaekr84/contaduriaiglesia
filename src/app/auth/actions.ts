@@ -56,7 +56,6 @@ export async function login(formData: FormData) {
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         path: '/',
-        maxAge: 60 * 60 * 24 * 7 // 1 week
     })
 
     // Log successful login
@@ -135,7 +134,6 @@ export async function signup(formData: FormData) {
                 secure: process.env.NODE_ENV === 'production',
                 sameSite: 'lax',
                 path: '/',
-                maxAge: 60 * 60 * 24 * 7 // 1 week
             })
         } catch (dbError) {
             console.error('Error creating user profile:', dbError)
@@ -168,4 +166,40 @@ export async function signout() {
     await supabase.auth.signOut()
     revalidatePath('/', 'layout')
     redirect('/login')
+}
+
+export async function lockSession() {
+    const cookieStore = await cookies()
+    cookieStore.set('app_locked', 'true', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+    })
+    redirect('/lock')
+}
+
+export async function unlockSession(prevState: any, formData: FormData) {
+    const supabase = await createClient()
+
+    const password = (formData.get('password') as string).trim()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user || !user.email) {
+        return { error: 'Sesión no válida' }
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password,
+    })
+
+    if (error) {
+        return { error: 'Contraseña incorrecta' }
+    }
+
+    const cookieStore = await cookies()
+    cookieStore.delete('app_locked')
+
+    redirect('/dashboard')
 }

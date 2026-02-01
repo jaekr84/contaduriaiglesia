@@ -29,9 +29,10 @@ export async function updateSession(request: NextRequest) {
                         supabaseResponse = NextResponse.next({
                             request,
                         })
-                        cookiesToSet.forEach(({ name, value, options }) =>
-                            supabaseResponse.cookies.set(name, value, options)
-                        )
+                        cookiesToSet.forEach(({ name, value, options }) => {
+                            const { maxAge, ...sessionOptions } = options
+                            supabaseResponse.cookies.set(name, value, sessionOptions)
+                        })
                     },
                 },
             }
@@ -56,6 +57,22 @@ export async function updateSession(request: NextRequest) {
             // no user, potentially respond by redirecting the user to the login page
             const url = request.nextUrl.clone()
             url.pathname = '/login'
+            return NextResponse.redirect(url)
+        }
+
+        // Check for lock state
+        const isLocked = request.cookies.get('app_locked')?.value === 'true'
+        const isOnLockPage = request.nextUrl.pathname === '/lock'
+
+        if (isLocked && !isOnLockPage && user) {
+            const url = request.nextUrl.clone()
+            url.pathname = '/lock'
+            return NextResponse.redirect(url)
+        }
+
+        if (!isLocked && isOnLockPage) {
+            const url = request.nextUrl.clone()
+            url.pathname = '/dashboard'
             return NextResponse.redirect(url)
         }
 
