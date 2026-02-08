@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useRef, useTransition, useEffect } from 'react'
-import { createTransaction } from '../actions'
+import { createTransaction, checkDuplicateTransaction } from '../actions'
 import { Category, Member } from '@prisma/client'
 import { Loader2, Plus, ArrowDownCircle } from 'lucide-react'
+import { DuplicateWarningDialog, DuplicateData } from './DuplicateWarningDialog'
 import { CreateCategoryDialog } from './CreateCategoryDialog'
 import { MoneyInput } from './MoneyInput'
 import { Combobox } from '@/components/ui/combobox'
@@ -24,6 +25,12 @@ export function QuickExpenseForm({ categories: initialCategories, userRole }: Qu
     const [selectedSubId, setSelectedSubId] = useState('')
     const [date, setDate] = useState(getTodayArgentinaISO())
     const [resetKey, setResetKey] = useState(0)
+
+    // Duplicate Validation State
+    const [isChecking, setIsChecking] = useState(false)
+    const [showDuplicateDialog, setShowDuplicateDialog] = useState(false)
+    const [duplicateData, setDuplicateData] = useState<DuplicateData[]>([])
+    const [pendingFormData, setPendingFormData] = useState<FormData | null>(null)
 
     // Local categories state for immediate updates
     const [categories, setCategories] = useState(initialCategories)
@@ -78,7 +85,7 @@ export function QuickExpenseForm({ categories: initialCategories, userRole }: Qu
         }
     }
 
-    const handleSubmit = (formData: FormData) => {
+    const handleSubmit = async (formData: FormData) => {
         formData.set('type', 'EXPENSE')
         formData.set('currency', currency)
 
@@ -89,6 +96,30 @@ export function QuickExpenseForm({ categories: initialCategories, userRole }: Qu
         }
         formData.set('categoryId', finalCategoryId)
 
+        // 1. Check for duplicates
+        setIsChecking(true)
+        try {
+            const check = await checkDuplicateTransaction(formData)
+
+            if (check.duplicates && check.duplicates.length > 0) {
+                // Found duplicates! Show warning
+                setDuplicateData(check.duplicates)
+                setPendingFormData(formData) // Save for later if confirmed
+                setShowDuplicateDialog(true)
+                setIsChecking(false)
+                return
+            }
+        } catch (err) {
+            console.error(err)
+            // If check fails, we proceed anyway? better safe than sorry, just log.
+        }
+        setIsChecking(false)
+
+        // 2. If no duplicates, proceed to create
+        performCreateTransaction(formData)
+    }
+
+    const performCreateTransaction = (formData: FormData) => {
         startTransition(async () => {
             const result = await createTransaction(formData)
 
@@ -112,6 +143,10 @@ export function QuickExpenseForm({ categories: initialCategories, userRole }: Qu
                 // Reset amount (MoneyInput)
                 setResetKey(prev => prev + 1)
 
+                // Close dialog if open
+                setShowDuplicateDialog(false)
+                setPendingFormData(null)
+
                 // Smart Focus: Focus amount input
                 setTimeout(() => {
                     amountInputRef.current?.focus()
@@ -120,6 +155,13 @@ export function QuickExpenseForm({ categories: initialCategories, userRole }: Qu
                 router.refresh()
             }
         })
+    }
+
+    const handleConfirmDuplicate = () => {
+        if (pendingFormData) {
+            setShowDuplicateDialog(false)
+            performCreateTransaction(pendingFormData)
+        }
     }
 
     // Filter categories by type EXPENSE
@@ -280,7 +322,7 @@ export function QuickExpenseForm({ categories: initialCategories, userRole }: Qu
                 <div className="pt-2">
                     <button
                         type="submit"
-                        disabled={isPending}
+                        disabled={isPending || isChecking}
                         className="w-full inline-flex h-9 items-center justify-center rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-50 shadow transition-colors hover:bg-zinc-900/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 disabled:pointer-events-none disabled:opacity-50 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-50/90 dark:focus-visible:ring-zinc-300"
                     >
                         {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
@@ -288,6 +330,23 @@ export function QuickExpenseForm({ categories: initialCategories, userRole }: Qu
                     </button>
                 </div>
             </form>
+
+            <DuplicateWarningDialog
+                open={showDuplicateDialog}
+                onOpenChange={setShowDuplicateDialog}
+                onConfirm={handleConfirmDuplicate}
+                onCancel={() => setShowDuplicateDialog(false)}
+                duplicates={duplicateData}
+                isPending={isPending}
+                newTransaction={{
+                    amount: pendingFormData ? Number(pendingFormData.get('amount')) : 0,
+                    currency: pendingFormData ? String(pendingFormData.get('currency')) : 'ARS',
+                    date: pendingFormData ? new Date(String(pendingFormData.get('date'))) : new Date(),
+                    description: pendingFormData ? String(pendingFormData.get('description')) : '',
+                    categoryName: categories.find(c => c.id === (selectedSubId || selectedParentId))?.name || ''
+                }}
+            />
         </div>
     )
 }
+

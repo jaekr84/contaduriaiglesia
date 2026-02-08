@@ -15,6 +15,37 @@ interface FinanceFilters {
     query?: string
 }
 
+function normalizeText(text: string): string {
+    return text
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove accents
+        .replace(/\s+/g, ' ') // Collapse whitespace
+        .trim();
+}
+
+function isSimilar(desc1: string, desc2: string): boolean {
+    const s1 = normalizeText(desc1);
+    const s2 = normalizeText(desc2);
+
+    // 1. Direct match or very short strings
+    if (s1 === s2) return true;
+    if (s1.length < 3 || s2.length < 3) return s1 === s2;
+
+    // 2. Inclusion check (one contains the other)
+    if (s1.includes(s2) || s2.includes(s1)) return true;
+
+    // 3. Shared Word Check (Token overlap)
+    // Useful for: "Mantenimiento Techo" vs "Reparacion Techo" (Share "techo")
+    const words1 = s1.split(' ').filter(w => w.length >= 4);
+    const words2 = new Set(s2.split(' ').filter(w => w.length >= 4));
+
+    for (const word of words1) {
+        if (words2.has(word)) return true;
+    }
+
+    return false;
+}
+
 async function buildWhereClause(profile: any, filters?: FinanceFilters): Promise<Prisma.TransactionWhereInput> {
     const where: Prisma.TransactionWhereInput = {
         organizationId: profile.organizationId,
@@ -616,6 +647,113 @@ export async function createExchange(formData: FormData) {
     } catch (error) {
         console.error(error)
         return { error: 'Error al registrar el cambio' }
+    }
+}
+
+export async function checkDuplicateTransaction(formData: FormData) {
+    const profile = await requireProfile()
+
+    if (!['ADMIN', 'TREASURER'].includes(profile.role)) {
+        return { error: 'No autorizado' }
+    }
+
+    const amount = parseFloat(formData.get('amount') as string)
+    // Handle date similarly to createTransaction
+    const dateStr = formData.get('date') as string
+    let inputDate: Date
+
+    if (dateStr && dateStr.includes('T')) {
+        inputDate = new Date(dateStr + '-03:00')
+    } else if (dateStr) {
+        const now = new Date()
+        const argTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Argentina/Buenos_Aires' }))
+        const hours = argTime.getHours().toString().padStart(2, '0')
+        const minutes = argTime.getMinutes().toString().padStart(2, '0')
+        const seconds = argTime.getSeconds().toString().padStart(2, '0')
+        inputDate = new Date(`${dateStr}T${hours}:${minutes}:${seconds}-03:00`)
+    } else {
+        inputDate = new Date()
+    }
+
+    const description = (formData.get('description') as string)?.trim() || ''
+    const currency = (formData.get('currency') as Currency) || 'ARS'
+
+    if (isNaN(amount) || amount <= 0) return { duplicates: [] }
+
+    // Define range: First day of month to Last day of month based on inputDate (Argentina Time)
+    // We maintain the -03:00 offset logic to align with Argentina user time.
+
+    // Create a date object corresponding to the input date
+    const targetDate = inputDate
+
+    // Get year and month
+    const year = targetDate.getFullYear()
+    const month = targetDate.getMonth() + 1 // 1-based for string formatting
+    const daysInMonth = new Date(year, month, 0).getDate() // Robust last day calculation
+
+    const startStr = `${year}-${month.toString().padStart(2, '0')}-01T00:00:00-03:00`
+    const endStr = `${year}-${month.toString().padStart(2, '0')}-${daysInMonth}T23:59:59.999-03:00`
+
+    // RULE: "Monto es el ancla". Strict amount check.
+    // We use a tiny epsilon for float comparison safety, but effectively strict.
+    const epsilon = 0.001
+
+
+
+    const duplicates = await prisma.transaction.findMany({
+        where: {
+            organizationId: profile.organizationId,
+            type: 'EXPENSE',
+            cancelledAt: null,
+            date: {
+                gte: new Date(startStr),
+                lte: new Date(endStr)
+            },
+            // STRICT Amount Match
+            amount: {
+                gte: amount - epsilon,
+                lte: amount + epsilon
+            },
+            // We do NOT filter by description in DB to handle fuzzy matching in memory correctly
+            // But we could filter by currency if needed.
+            currency: currency
+        },
+        include: {
+            category: true
+        }
+    })
+
+    // Fetch input category to know its parent
+    const inputCatId = formData.get('categoryId') as string
+    const inputCategory = await prisma.category.findUnique({
+        where: { id: inputCatId }
+    })
+
+    // Filter in memory: Strict Category Match OR Parent/Child Match
+    const exactMatches = duplicates.filter(t => {
+        if (!inputCategory) return false
+
+        // 1. Exact Match
+        if (t.categoryId === inputCatId) return true
+
+        // 2. DB is Child of Input (User selected Parent, DB has Subcategory)
+        if (t.category.parentId === inputCatId) return true
+
+        // 3. DB is Parent of Input (User selected Subcategory, DB has Parent)
+        if (inputCategory.parentId && t.categoryId === inputCategory.parentId) return true
+
+        return false
+    })
+
+    return {
+        duplicates: exactMatches.map(t => ({
+            id: t.id,
+            date: t.date,
+            amount: Number(t.amount),
+            currency: t.currency,
+            categoryName: t.category.name,
+            description: t.description
+        }))
     }
 }
 
