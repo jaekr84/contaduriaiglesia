@@ -657,7 +657,6 @@ export async function checkDuplicateTransaction(formData: FormData) {
         return { error: 'No autorizado' }
     }
 
-    const amount = parseFloat(formData.get('amount') as string)
     // Handle date similarly to createTransaction
     const dateStr = formData.get('date') as string
     let inputDate: Date
@@ -675,31 +674,20 @@ export async function checkDuplicateTransaction(formData: FormData) {
         inputDate = new Date()
     }
 
-    const description = (formData.get('description') as string)?.trim() || ''
-    const currency = (formData.get('currency') as Currency) || 'ARS'
+    const categoryId = formData.get('categoryId') as string
 
-    if (isNaN(amount) || amount <= 0) return { duplicates: [] }
+    if (!categoryId) return { duplicates: [] }
 
     // Define range: First day of month to Last day of month based on inputDate (Argentina Time)
-    // We maintain the -03:00 offset logic to align with Argentina user time.
-
-    // Create a date object corresponding to the input date
     const targetDate = inputDate
-
-    // Get year and month
     const year = targetDate.getFullYear()
     const month = targetDate.getMonth() + 1 // 1-based for string formatting
-    const daysInMonth = new Date(year, month, 0).getDate() // Robust last day calculation
+    const daysInMonth = new Date(year, month, 0).getDate()
 
     const startStr = `${year}-${month.toString().padStart(2, '0')}-01T00:00:00-03:00`
     const endStr = `${year}-${month.toString().padStart(2, '0')}-${daysInMonth}T23:59:59.999-03:00`
 
-    // RULE: "Monto es el ancla". Strict amount check.
-    // We use a tiny epsilon for float comparison safety, but effectively strict.
-    const epsilon = 0.001
-
-
-
+    // STRICT Category Match + Month Match (Ignore Amount)
     const duplicates = await prisma.transaction.findMany({
         where: {
             organizationId: profile.organizationId,
@@ -709,44 +697,18 @@ export async function checkDuplicateTransaction(formData: FormData) {
                 gte: new Date(startStr),
                 lte: new Date(endStr)
             },
-            // STRICT Amount Match
-            amount: {
-                gte: amount - epsilon,
-                lte: amount + epsilon
-            },
-            // We do NOT filter by description in DB to handle fuzzy matching in memory correctly
-            // But we could filter by currency if needed.
-            currency: currency
+            categoryId: categoryId
         },
         include: {
             category: true
+        },
+        orderBy: {
+            date: 'desc'
         }
     })
 
-    // Fetch input category to know its parent
-    const inputCatId = formData.get('categoryId') as string
-    const inputCategory = await prisma.category.findUnique({
-        where: { id: inputCatId }
-    })
-
-    // Filter in memory: Strict Category Match OR Parent/Child Match
-    const exactMatches = duplicates.filter(t => {
-        if (!inputCategory) return false
-
-        // 1. Exact Match
-        if (t.categoryId === inputCatId) return true
-
-        // 2. DB is Child of Input (User selected Parent, DB has Subcategory)
-        if (t.category.parentId === inputCatId) return true
-
-        // 3. DB is Parent of Input (User selected Subcategory, DB has Parent)
-        if (inputCategory.parentId && t.categoryId === inputCategory.parentId) return true
-
-        return false
-    })
-
     return {
-        duplicates: exactMatches.map(t => ({
+        duplicates: duplicates.map(t => ({
             id: t.id,
             date: t.date,
             amount: Number(t.amount),
