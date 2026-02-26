@@ -33,6 +33,8 @@ interface ComboboxProps {
     emptyText?: string;
     disabled?: boolean;
     className?: string; // Applied to the Button trigger
+    onKeyDown?: React.KeyboardEventHandler<HTMLButtonElement>;
+    onInputKeyDown?: React.KeyboardEventHandler<HTMLInputElement>;
 }
 
 export const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(({
@@ -43,7 +45,9 @@ export const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(({
     searchPlaceholder = "Buscar...",
     emptyText = "Sin resultados.",
     disabled = false,
-    className
+    className,
+    onKeyDown,
+    onInputKeyDown
 }, ref) => {
     const [open, setOpen] = React.useState(false)
 
@@ -53,11 +57,18 @@ export const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(({
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
                 <Button
+                    type="button"
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
                     disabled={disabled}
                     ref={ref}
+                    onKeyDown={onKeyDown}
+                    onKeyUp={(e) => {
+                        if (e.key === 'Tab' && !open) {
+                            setOpen(true)
+                        }
+                    }}
                     className={cn(
                         "w-full justify-between h-9 px-3 py-1 font-normal bg-transparent border-zinc-200 shadow-sm transition-colors hover:bg-transparent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:text-zinc-50 dark:focus-visible:ring-zinc-300",
                         !value && "text-zinc-500 dark:text-zinc-400",
@@ -75,8 +86,12 @@ export const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(({
                 align="start"
                 sideOffset={4}
             >
-                <Command className="w-full">
-                    <CommandInput placeholder={searchPlaceholder} className="h-9" />
+                <Command className="w-full" loop>
+                    <CommandInput
+                        placeholder={searchPlaceholder}
+                        className="h-9"
+                        onKeyDown={onInputKeyDown}
+                    />
                     <CommandList className="max-h-60">
                         <CommandEmpty className="py-2 px-4 text-sm">{emptyText}</CommandEmpty>
                         <CommandGroup>

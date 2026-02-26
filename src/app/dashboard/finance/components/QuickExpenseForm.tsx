@@ -45,6 +45,8 @@ export function QuickExpenseForm({ categories: initialCategories, userRole }: Qu
     const subcategoryInputRef = useRef<HTMLButtonElement>(null)
     const subcategoryTriggerRef = useRef<HTMLButtonElement>(null)
     const descriptionInputRef = useRef<HTMLInputElement>(null)
+    const categoryInputRef = useRef<HTMLButtonElement>(null)
+    const submitButtonRef = useRef<HTMLButtonElement>(null)
     const router = useRouter()
 
     const amountInputRef = useRef<HTMLInputElement>(null)
@@ -224,12 +226,6 @@ export function QuickExpenseForm({ categories: initialCategories, userRole }: Qu
                                 required
                                 placeholder="0,00 (F2)"
                                 className="flex h-9 w-full rounded-md border border-zinc-200 bg-transparent px-3 py-1 text-right text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:text-zinc-300 dark:placeholder:text-zinc-400 dark:focus-visible:ring-zinc-300 font-mono"
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                        e.preventDefault()
-                                        formRef.current?.requestSubmit()
-                                    }
-                                }}
                             />
                         </div>
                     </div>
@@ -242,6 +238,7 @@ export function QuickExpenseForm({ categories: initialCategories, userRole }: Qu
                         <div className="flex gap-2">
                             <div className="relative flex-1">
                                 <Combobox
+                                    ref={categoryInputRef}
                                     options={parentCategories.map(c => ({ value: c.id, label: c.name }))}
                                     value={selectedParentId}
                                     onChange={(val) => {
@@ -258,7 +255,7 @@ export function QuickExpenseForm({ categories: initialCategories, userRole }: Qu
                                 type="EXPENSE"
                                 onCategoryCreated={handleCategoryCreated}
                                 trigger={
-                                    <button type="button" className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-zinc-200 bg-transparent text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 disabled:pointer-events-none disabled:opacity-50 dark:border-zinc-800 dark:text-zinc-50 dark:hover:bg-zinc-800" title="Nueva Categoría">
+                                    <button type="button" tabIndex={-1} className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-zinc-200 bg-transparent text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 disabled:pointer-events-none disabled:opacity-50 dark:border-zinc-800 dark:text-zinc-50 dark:hover:bg-zinc-800" title="Nueva Categoría">
                                         <Plus className="h-4 w-4" />
                                     </button>
                                 }
@@ -279,8 +276,10 @@ export function QuickExpenseForm({ categories: initialCategories, userRole }: Qu
                                             .map(sub => ({ value: sub.id, label: sub.name }))
                                     ]}
                                     value={selectedSubId}
-                                    onChange={setSelectedSubId}
-                                    disabled={!selectedParentId || !filteredCategories.some(c => c.parentId === selectedParentId)}
+                                    onChange={(val) => {
+                                        setSelectedSubId(val)
+                                    }}
+                                    disabled={!selectedParentId}
                                     placeholder="General"
                                     searchPlaceholder="Buscar subcategoría..."
                                     emptyText="Sin subcategorías"
@@ -296,6 +295,7 @@ export function QuickExpenseForm({ categories: initialCategories, userRole }: Qu
                                     <button
                                         ref={subcategoryTriggerRef}
                                         type="button"
+                                        tabIndex={-1}
                                         disabled={!selectedParentId}
                                         className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-zinc-200 bg-transparent text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 disabled:pointer-events-none disabled:opacity-50 dark:border-zinc-800 dark:text-zinc-50 dark:hover:bg-zinc-800"
                                         title={selectedParentId ? "Nueva Subcategoría" : "Seleccione una categoría primero"}
@@ -321,6 +321,7 @@ export function QuickExpenseForm({ categories: initialCategories, userRole }: Qu
 
                 <div className="pt-2">
                     <button
+                        ref={submitButtonRef}
                         type="submit"
                         disabled={isPending || isChecking}
                         className="w-full inline-flex h-9 items-center justify-center rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-50 shadow transition-colors hover:bg-zinc-900/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 disabled:pointer-events-none disabled:opacity-50 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-50/90 dark:focus-visible:ring-zinc-300"

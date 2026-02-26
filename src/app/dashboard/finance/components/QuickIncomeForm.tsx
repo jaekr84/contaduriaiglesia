@@ -177,12 +177,6 @@ export function QuickIncomeForm({ categories: initialCategories, userRole }: Qui
                                 required
                                 placeholder="0,00 (F1)"
                                 className="flex h-9 w-full rounded-md border border-zinc-200 bg-transparent px-3 py-1 text-right text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:text-zinc-300 dark:placeholder:text-zinc-400 dark:focus-visible:ring-zinc-300 font-mono"
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                        e.preventDefault()
-                                        formRef.current?.requestSubmit()
-                                    }
-                                }}
                             />
                         </div>
                     </div>
@@ -211,7 +205,7 @@ export function QuickIncomeForm({ categories: initialCategories, userRole }: Qui
                                 type="INCOME"
                                 onCategoryCreated={handleCategoryCreated}
                                 trigger={
-                                    <button type="button" className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-zinc-200 bg-transparent text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 disabled:pointer-events-none disabled:opacity-50 dark:border-zinc-800 dark:text-zinc-50 dark:hover:bg-zinc-800" title="Nueva Categoría">
+                                    <button type="button" tabIndex={-1} className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-zinc-200 bg-transparent text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 disabled:pointer-events-none disabled:opacity-50 dark:border-zinc-800 dark:text-zinc-50 dark:hover:bg-zinc-800" title="Nueva Categoría">
                                         <Plus className="h-4 w-4" />
                                     </button>
                                 }
@@ -232,8 +226,10 @@ export function QuickIncomeForm({ categories: initialCategories, userRole }: Qui
                                             .map(sub => ({ value: sub.id, label: sub.name }))
                                     ]}
                                     value={selectedSubId}
-                                    onChange={setSelectedSubId}
-                                    disabled={!selectedParentId || !filteredCategories.some(c => c.parentId === selectedParentId)}
+                                    onChange={(val) => {
+                                        setSelectedSubId(val)
+                                    }}
+                                    disabled={!selectedParentId}
                                     placeholder="General"
                                     searchPlaceholder="Buscar subcategoría..."
                                     emptyText="Sin subcategorías"
@@ -249,6 +245,7 @@ export function QuickIncomeForm({ categories: initialCategories, userRole }: Qui
                                     <button
                                         ref={subcategoryTriggerRef}
                                         type="button"
+                                        tabIndex={-1}
                                         disabled={!selectedParentId}
                                         className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-zinc-200 bg-transparent text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 disabled:pointer-events-none disabled:opacity-50 dark:border-zinc-800 dark:text-zinc-50 dark:hover:bg-zinc-800"
                                         title={selectedParentId ? "Nueva Subcategoría" : "Seleccione una categoría primero"}
