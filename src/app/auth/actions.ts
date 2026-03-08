@@ -203,3 +203,40 @@ export async function unlockSession(prevState: any, formData: FormData) {
 
     redirect('/dashboard')
 }
+
+export async function resetPassword(formData: FormData) {
+    const supabase = await createClient()
+    const email = (formData.get('email') as string).trim()
+
+    // Using headers to construct the callback URL dynamically
+    const headersList = await import('next/headers').then(m => m.headers())
+    const host = headersList.get('host')
+    const protocol = headersList.get('x-forwarded-proto') || 'http'
+    const origin = `${protocol}://${host}`
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${origin}/auth/callback?next=/update-password`,
+    })
+
+    if (error) {
+        return { error: error.message }
+    }
+
+    return { success: true }
+}
+
+export async function updatePassword(formData: FormData) {
+    const supabase = await createClient()
+    const password = (formData.get('password') as string).trim()
+
+    const { error } = await supabase.auth.updateUser({
+        password: password
+    })
+
+    if (error) {
+        return { error: error.message }
+    }
+
+    revalidatePath('/', 'layout')
+    redirect('/dashboard')
+}

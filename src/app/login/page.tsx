@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { login, signup } from '@/app/auth/actions'
+import { login, signup, resetPassword } from '@/app/auth/actions'
 import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
@@ -9,12 +9,24 @@ import { Loader2 } from 'lucide-react'
 export default function LoginPage() {
     const [isPending, startTransition] = useTransition()
     const [isLogin, setIsLogin] = useState(true)
+    const [isForgotPassword, setIsForgotPassword] = useState(false)
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
         const formData = new FormData(event.currentTarget)
 
         startTransition(async () => {
+            if (isForgotPassword) {
+                const result = await resetPassword(formData)
+                if (result?.error) {
+                    toast.error(result.error)
+                } else {
+                    toast.success('Te enviamos un email con las instrucciones para recuperar tu contraseña')
+                    setIsForgotPassword(false)
+                }
+                return
+            }
+
             const action = isLogin ? login : signup
             const result = await action(formData)
 
@@ -37,10 +49,10 @@ export default function LoginPage() {
                         </div>
                     </div>
                     <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-                        {isLogin ? 'Iniciar Sesión' : 'Crear Cuenta'}
+                        {isForgotPassword ? 'Recuperar Contraseña' : isLogin ? 'Iniciar Sesión' : 'Crear Cuenta'}
                     </h1>
                     <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                        {isLogin ? 'Ingresa tus credenciales para acceder' : 'Registrate para gestionar tu iglesia'}
+                        {isForgotPassword ? 'Ingresa tu email para recibir un enlace de recuperación' : isLogin ? 'Ingresa tus credenciales para acceder' : 'Registrate para gestionar tu iglesia'}
                     </p>
                 </div>
 
@@ -58,20 +70,23 @@ export default function LoginPage() {
                             className="flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-950 dark:ring-offset-zinc-950 dark:placeholder:text-zinc-400 dark:focus-visible:ring-zinc-300"
                         />
                     </div>
-                    <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                            <label htmlFor="password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-zinc-900 dark:text-zinc-50">
-                                Contraseña
-                            </label>
+
+                    {!isForgotPassword && (
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                                <label htmlFor="password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-zinc-900 dark:text-zinc-50">
+                                    Contraseña
+                                </label>
+                            </div>
+                            <input
+                                id="password"
+                                name="password"
+                                type="password"
+                                required
+                                className="flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-950 dark:ring-offset-zinc-950 dark:placeholder:text-zinc-400 dark:focus-visible:ring-zinc-300"
+                            />
                         </div>
-                        <input
-                            id="password"
-                            name="password"
-                            type="password"
-                            required
-                            className="flex h-10 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-950 dark:ring-offset-zinc-950 dark:placeholder:text-zinc-400 dark:focus-visible:ring-zinc-300"
-                        />
-                    </div>
+                    )}
 
                     <button
                         type="submit"
@@ -80,6 +95,8 @@ export default function LoginPage() {
                     >
                         {isPending ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : isForgotPassword ? (
+                            'Enviar Enlace'
                         ) : isLogin ? (
                             'Ingresar'
                         ) : (
@@ -88,14 +105,33 @@ export default function LoginPage() {
                     </button>
                 </form>
 
-                <div className="text-center text-sm">
-                    <button
-                        type="button"
-                        onClick={() => setIsLogin(!isLogin)}
-                        className="text-zinc-500 underline-offset-4 hover:underline dark:text-zinc-400"
-                    >
-                        {isLogin ? '¿No tenés cuenta? Registrate' : '¿Ya tenés cuenta? Iniciá sesión'}
-                    </button>
+                <div className="flex flex-col space-y-2 text-center text-sm">
+                    {isForgotPassword ? (
+                        <button
+                            type="button"
+                            onClick={() => setIsForgotPassword(false)}
+                            className="text-zinc-500 underline-offset-4 hover:underline dark:text-zinc-400"
+                        >
+                            Volver al inicio de sesión
+                        </button>
+                    ) : (
+                        <>
+                            <button
+                                type="button"
+                                onClick={() => setIsForgotPassword(true)}
+                                className="text-zinc-500 underline-offset-4 hover:underline dark:text-zinc-400"
+                            >
+                                ¿Olvidaste tu contraseña?
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setIsLogin(!isLogin)}
+                                className="text-zinc-500 underline-offset-4 hover:underline dark:text-zinc-400"
+                            >
+                                {isLogin ? '¿No tenés cuenta? Registrate' : '¿Ya tenés cuenta? Iniciá sesión'}
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
         </div>
