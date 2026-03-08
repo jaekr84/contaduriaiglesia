@@ -225,8 +225,8 @@ export async function resetPassword(formData: FormData) {
             newCount = 0
         }
 
-        if (newCount >= 3) {
-            return { error: 'Has superado el límite de 3 intentos de recuperación por hoy. Por favor intentá mañana.' }
+        if (newCount >= 10) {
+            return { error: 'Has superado el límite de 10 intentos de recuperación por hoy. Por favor intentá mañana.' }
         }
 
         // Update profile tracking
@@ -257,6 +257,8 @@ export async function resetPassword(formData: FormData) {
         const protocol = headersList.get('x-forwarded-proto') || 'http'
         origin = `${protocol}://${host}`
     }
+
+    console.log('Using origin for password recovery:', origin)
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${origin}/auth/callback?next=/update-password`,
