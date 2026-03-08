@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 
 import { createClient } from '@/lib/supabase/server'
 
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { createAuditLog } from '@/lib/audit'
 import { getCurrentProfile } from '@/lib/auth'
 
@@ -208,11 +208,55 @@ export async function resetPassword(formData: FormData) {
     const supabase = await createClient()
     const email = (formData.get('email') as string).trim()
 
-    // Using headers to construct the callback URL dynamically
-    const headersList = await import('next/headers').then(m => m.headers())
-    const host = headersList.get('host')
-    const protocol = headersList.get('x-forwarded-proto') || 'http'
-    const origin = `${protocol}://${host}`
+    // Rate Limiting Logic
+    const profile = await prisma.profile.findFirst({
+        where: { email: { equals: email, mode: 'insensitive' } }
+    })
+
+    if (profile) {
+        const now = new Date()
+        const lastReset = profile.lastPasswordResetAt
+        const dayInMs = 24 * 60 * 60 * 1000
+
+        let newCount = profile.passwordResetCount
+
+        // If last reset was more than 24h ago, reset count
+        if (!lastReset || (now.getTime() - lastReset.getTime() > dayInMs)) {
+            newCount = 0
+        }
+
+        if (newCount >= 3) {
+            return { error: 'Has superado el límite de 3 intentos de recuperación por hoy. Por favor intentá mañana.' }
+        }
+
+        // Update profile tracking
+        await prisma.profile.update({
+            where: { id: profile.id },
+            data: {
+                passwordResetCount: newCount + 1,
+                lastPasswordResetAt: now
+            }
+        })
+
+        // Log audit event
+        await createAuditLog({
+            eventType: 'PASSWORD_RESET_REQUESTED' as any,
+            userId: profile.id,
+            userEmail: email,
+            organizationId: profile.organizationId,
+            details: { attempt: newCount + 1 }
+        })
+    }
+
+    // Robust origin construction
+    let origin = process.env.NEXT_PUBLIC_SITE_URL
+
+    if (!origin) {
+        const headersList = await headers()
+        const host = headersList.get('host')
+        const protocol = headersList.get('x-forwarded-proto') || 'http'
+        origin = `${protocol}://${host}`
+    }
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${origin}/auth/callback?next=/update-password`,

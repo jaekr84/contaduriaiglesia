@@ -56,6 +56,10 @@ model Profile {
   
   createdBudgets        Budget[]      @relation("BudgetCreatedBy")
   updatedBudgets        Budget[]      @relation("BudgetUpdatedBy")
+
+  // Password Reset Rate Limiting
+  passwordResetCount    Int           @default(0)
+  lastPasswordResetAt   DateTime?
 }
 
 
@@ -251,6 +255,7 @@ enum AuditEventType {
   USER_REMOVED
   INVITATION_REVOKED
   INVITATION_ACCEPTED
+  PASSWORD_RESET_REQUESTED
 
   // Budgets
   BUDGET_CREATED
